@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Git Notes</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --border: #2a2e37;
+    --text: #e5e7eb;
+    --muted: #9aa1ac;
+    --accent: #6ea8fe;
+    --code-bg: #11141a;
+    --code-border: #262b34;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 40px 20px 80px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 820px; margin: 0 auto; }
+  h1 {
+    font-size: 1.7rem;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    color: var(--muted);
+    margin-bottom: 24px;
+    font-size: 0.95rem;
+  }
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .toolbar button {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .toolbar button:hover { border-color: var(--accent); }
+
+details {
+background: var(--panel);
+border: 1px solid var(--border);
+border-radius: 8px;
+margin-bottom: 10px;
+padding: 0;
+overflow: hidden;
+}
+details > details {
+margin: 10px 14px 10px 14px;
+}
+summary {
+cursor: pointer;
+padding: 12px 16px;
+font-weight: 600;
+list-style: none;
+display: flex;
+align-items: center;
+gap: 8px;
+user-select: none;
+}
+summary::-webkit-details-marker { display: none; }
+summary::before {
+content: "▸";
+display: inline-block;
+transition: transform 0.15s ease;
+color: var(--accent);
+font-size: 0.8rem;
+width: 12px;
+}
+details[open] > summary::before {
+transform: rotate(90deg);
+}
+
+.top-level > summary { font-size: 1.05rem; }
+.sub-level > summary { font-size: 0.95rem; font-weight: 500; }
+
+.content {
+padding: 4px 16px 16px 38px;
+color: var(--text);
+font-size: 0.93rem;
+}
+.content p { margin: 8px 0; }
+.content ul { margin: 6px 0; padding-left: 20px; }
+.content li { margin: 3px 0; }
+
+code, .inline-code {
+background: var(--code-bg);
+border: 1px solid var(--code-border);
+border-radius: 4px;
+padding: 1px 6px;
+font-family: "SF Mono", Consolas, Menlo, monospace;
+font-size: 0.85em;
+color: #a5d6ff;
+}
+pre {
+background: var(--code-bg);
+border: 1px solid var(--code-border);
+border-radius: 6px;
+padding: 12px 14px;
+overflow-x: auto;
+margin: 10px 0;
+}
+pre code {
+background: none;
+border: none;
+padding: 0;
+color: #a5d6ff;
+}
+.note {
+color: var(--muted);
+font-size: 0.85rem;
+font-style: italic;
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Git Notes</h1>
+  <div class="subtitle">Click sections to expand/collapse. Nested items (1.1, 1.2 ...) open inside their parent.</div>
+
+  <div class="toolbar">
+    <button onclick="document.querySelectorAll('details').forEach(d=>d.open=true)">Expand all</button>
+    <button onclick="document.querySelectorAll('details').forEach(d=>d.open=false)">Collapse all</button>
+  </div>
+
+  <!-- 1. GIT BASICS -->
+  <details class="top-level" open>
+    <summary>1. Git Basics</summary>
+    <div class="content">
+      <p>Git is a version control system that allows you to track changes in your code and collaborate with others efficiently.</p>
+      <p><strong>Great for:</strong></p>
+      <ul>
+        <li>Staging Area</li>
+        <li>Undoing Mistakes</li>
+        <li>Integration with Other Tools</li>
+        <li>Community and Support</li>
+        <li>Standard in the Industry</li>
+        <li>Version Control</li>
+        <li>Collaboration</li>
+        <li>Branching &amp; Merging</li>
+        <li>Distributed System</li>
+        <li>Tracking Changes</li>
+      </ul>
+    </div>
+  </details>
+
+  <!-- 2. GIT CONFIG -->
+  <details class="top-level">
+    <summary>2. Git Config</summary>
+    <div class="content">
+
+      <details class="sub-level">
+        <summary>2.1 git --version</summary>
+        <div class="content">
+          <p>Checks the installed Git version.</p>
+        </div>
+      </details>
+
+      <details class="sub-level">
+        <summary>2.2 git config --global user.name</summary>
+        <div class="content">
+          <p>Checks the configured name. To change it, add the name:</p>
+          <pre><code>git config --global user.name "heguer"</code></pre>
+        </div>
+      </details>
+
+      <details class="sub-level">
+        <summary>2.3 git config --global user.email</summary>
+        <div class="content">
+          <p>Checks/sets the email associated with your commits.</p>
+        </div>
+      </details>
+
+    </div>
+
+  </details>
+
+  <!-- 3. START A REPO -->
+  <details class="top-level">
+    <summary>3. Start a Repo</summary>
+    <div class="content">
+
+      <details class="sub-level">
+        <summary>3.1 git init</summary>
+        <div class="content">
+          <p>Initializes a new Git repository. This command creates a new Git repository in the current directory and sets up the basic files and directories needed to start tracking changes.</p>
+          <p class="note">Running <code>git init</code> again in the same folder doesn't create a new repo — it reinitializes the existing one. Multiple repos require separate folders, each with its own <code>git init</code>.</p>
+          <p><code>git init</code> and <code>git init .</code> do the same thing (<code>.</code> is the default target). <code>git init &lt;path&gt;</code> creates and initializes a new folder instead.</p>
+        </div>
+      </details>
+
+      <details class="sub-level">
+        <summary>3.2 git config --global init.defaultBranch main</summary>
+        <div class="content">
+          <p>Sets the default branch name for new repositories you create — so now the new name should be <code>main</code>.</p>
+
+          <p><strong>What it does:</strong> Sets the name Git uses for the initial branch whenever you run <code>git init</code> on a new repo — instead of Git's older default (<code>master</code>), new repos will start with a branch called <code>main</code>.</p>
+
+          <p><strong>Why it matters:</strong> GitHub, GitLab, and most modern tooling default to <code>main</code> now, so this keeps your local setup consistent with what you'll push to.</p>
+
+          <p><strong>Scope:</strong> <code>--global</code> means it applies to every new repo you init on this machine going forward — it does not rename branches in repos you already created.</p>
+
+          <p><strong>To check branch name:</strong></p>
+          <pre><code>git config --global init.defaultBranch</code></pre>
+
+          <p><strong>To change name (master → main):</strong></p>
+          <pre><code>git branch -m master main</code></pre>
+        </div>
+      </details>
+
+    </div>
+
+  </details>
+
+  <!-- 4. WORK ON THE REPO -->
+  <details class="top-level">
+    <summary>4. Work on the Repo</summary>
+    <div class="content">
+
+      <details class="sub-level">
+        <summary>4.1 git status</summary>
+        <div class="content">
+          <p>Say we create a couple files in the tracked folder — it will show them as untracked files and ask if you want to include them.</p>
+        </div>
+      </details>
+
+      <details class="sub-level">
+        <summary>4.2 git add [file/directory]</summary>
+        <div class="content">
+          <p>Prepares the changes for the next commit. This starts tracking a file or directory.</p>
+        </div>
+      </details>
+
+      <details class="sub-level">
+        <summary>4.3 git add .</summary>
+        <div class="content">
+          <p>Adds everything in the repository (new files, modified files, and deletions). The command used most often.</p>
+        </div>
+      </details>
+
+      <details class="sub-level">
+        <summary>4.4 git add -A</summary>
+        <div class="content">
+          <p>Adds everything in the repository (new files, modified files, and deletions).</p>
+        </div>
+      </details>
+
+      <details class="sub-level">
+        <summary>4.5 git commit -m "commit message"</summary>
+        <div class="content">
+          <p>Creates a new commit with a message describing the changes made, capturing the changes made to your local repository.</p>
+        </div>
+      </details>
+
+      <details class="sub-level">
+        <summary>4.6 git log</summary>
+        <div class="content">
+          <p>Shows a list of all commits in the repository — displaying the author, date, and commit message for each.</p>
+          <p>At the very bottom you'll see something like this:</p>
+          <pre><code>~
+
+(END)
+commit e36ad272b950404daa3e38fee01c0343d53119cb (HEAD -> master)
+Author: heguerack &lt;heguer76@gmail.com&gt;
+Date: Tue Aug 4 16:50:13 2026 -0600
+
+    add all files at once, to be tracked
+
+~</code></pre>
+<p>From here we can get the commit id. Using the commit id from <code>git log</code>, we can jump to that snapshot — basically going back to that point in time.</p>
+</div>
+</details>
+
+    </div>
+
+  </details>
+
+  <!-- 5. GIT ADVANCED -->
+  <details class="top-level">
+    <summary>5. Git Advanced</summary>
+    <div class="content">
+
+      <details class="sub-level">
+        <summary>5.1 Moving to a different commit (DOM)</summary>
+        <div class="content">
+          <pre><code>git checkout e36ad272b950404daa3e38fee01c0343d53119cb</code></pre>
+          <p>This takes us to that point in time — the snapshot.</p>
+        </div>
+      </details>
+
+      <details class="sub-level">
+        <summary>5.2 git checkout .</summary>
+        <div class="content">
+          <p>Say you're working on the project and don't want those changes. Instead of going back to a specific commit, use <code>git checkout .</code> to discard changes and start over.</p>
+        </div>
+      </details>
+
+    </div>
+
+  </details>
+
+  <!-- 6. GITHUB -->
+  <details class="top-level">
+    <summary>6. GitHub</summary>
+    <div class="content">
+      <p>To work with others remotely. So far it's been local dev — when you run <code>git init</code>, you initialize locally.</p>
+
+      <details class="sub-level">
+        <summary>6.1 Start a repo on GitHub</summary>
+        <div class="content">
+          <p>Make sure your local repo is on <code>main</code> or <code>master</code> first.</p>
+        </div>
+      </details>
+
+      <details class="sub-level">
+        <summary>6.2 git remote add origin</summary>
+        <div class="content">
+          <pre><code>git remote add origin https://github.com/frankdmosquera/mastering-git.git
+
+git branch -M main
+git push -u origin main</code></pre>
+<p>This is the first block GitHub gives you when pushing an existing repo from the command line — you can run all three at once.</p>
+</div>
+</details>
+
+    </div>
+
+  </details>
+
+  <!-- 7. BRANCHING -->
+  <details class="top-level">
+    <summary>7. Branching</summary>
+    <div class="content">
+
+      <details class="sub-level">
+        <summary>7.1 git branch</summary>
+        <div class="content">
+          <p>Lists all the branches in the current repository. Shows the current branch you're on, highlighted with an asterisk.</p>
+        </div>
+      </details>
+
+      <details class="sub-level">
+        <summary>7.2 git branch new-branch</summary>
+        <div class="content">
+          <p>Creates a new branch, but doesn't switch you to it.</p>
+        </div>
+      </details>
+
+      <details class="sub-level">
+        <summary>7.3 git checkout new-branch</summary>
+        <div class="content">
+          <p>Switches you to the newly created branch.</p>
+        </div>
+      </details>
+
+      <details class="sub-level">
+        <summary>7.4 git checkout -b new-branch-name</summary>
+        <div class="content">
+          <p>Creates the branch and switches you to it in one step. Note: it branches off whatever branch you're currently on — not necessarily main — so be careful depending on what you're doing.</p>
+        </div>
+      </details>
+
+      <details class="sub-level">
+        <summary>7.5 git branch new-branch-name some-other-branch</summary>
+        <div class="content">
+          <p>Creates a branch from a selected branch — no need to checkout first.</p>
+        </div>
+      </details>
+
+    </div>
+
+  </details>
+
+  <!-- 8. LOCAL VS CLOUD -->
+  <details class="top-level">
+    <summary>8. Local Commits vs (Cloud) GitHub</summary>
+    <div class="content">
+
+      <details class="sub-level">
+        <summary>8.1 git push --set-upstream origin feature-branch</summary>
+        <div class="content">
+          <p>Pushes to GitHub and keeps things in sync. <code>git push -u origin feature-branch</code> is an alternative shorthand.</p>
+        </div>
+      </details>
+
+      <details class="sub-level">
+        <summary>8.2 git push</summary>
+        <div class="content">
+          <p>Once linked, you can just run <code>git push</code>.</p>
+        </div>
+      </details>
+
+      <details class="sub-level">
+        <summary>8.3 git pull</summary>
+        <div class="content">
+          <p>Fetches changes from the remote repo. If someone makes changes on GitHub, this brings you up to date.</p>
+        </div>
+      </details>
+
+    </div>
+
+  </details>
+
+  <!-- 9. MERGING BACK TO MAIN -->
+  <details class="top-level">
+    <summary>9. Merging Back to Main</summary>
+    <div class="content">
+      <p>The idea: sync main so it gets the changes from feature-branch, once the feature is tested and confirmed good.</p>
+      <ul>
+        <li>Go to "Compare and pull requests" or "Pull requests" in the nav menu</li>
+        <li>Click "New"</li>
+        <li>Compare: <code>feature-branch</code> (from) → base: <code>main</code></li>
+        <li>It will show something like: "Showing 1 changed file with 11 additions and 0 deletions"</li>
+        <li>If everything looks good, click <strong>Create pull request</strong></li>
+        <li>The team lead or senior dev reviews and clicks <strong>Merge pull request</strong></li>
+        <li>Confirm merge</li>
+        <li>At this point, the feature-branch can be deleted — everything is in main on GitHub</li>
+      </ul>
+      <p class="note">But here's the catch: locally, you still have that extra branch, and main hasn't been merged locally either! Just run <code>git pull</code> — all the GitHub changes become active locally.</p>
+    </div>
+  </details>
+
+  <!-- 10. TYPICAL WORKFLOW -->
+  <details class="top-level">
+    <summary>10. Typical Workflow</summary>
+    <div class="content">
+      <ul>
+        <li>Clone the repo</li>
+        <li>Create a new branch from main (or another branch)</li>
+        <li>Make your changes</li>
+        <li>Push the branch to the remote repo</li>
+        <li>Open a pull request</li>
+        <li>Merge the changes</li>
+        <li>Pull the merged changes into your local main branch</li>
+      </ul>
+    </div>
+  </details>
+
+</div>
+</body>
+</html>

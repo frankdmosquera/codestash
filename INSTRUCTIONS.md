@@ -1,55 +1,35 @@
-# Manuals feature — Mastering Git
+# Codestash — Setup
 
-Everything here assumes `components/ui/accordion.tsx`, `button.tsx`, and `input.tsx` already
-exist from your `npx shadcn@latest add --all` run, and that your `@/*` import alias points at
-the project root (standard shadcn setup — no changes needed there).
+A personal dev reference catalog (manuals, hooks, helpers, blocks, AI
+instructions), built on Next.js + shadcn.
 
-## Where each folder goes
+## Prerequisites
 
-- `helpers/parse-inline.tsx` → your project's `helpers/` folder (regular, non-server helper)
-- `features/manuals/` → your project's `features/` folder, as-is
-- `app-manuals/` → **rename this to `app/manuals/`** when you copy it in (called it
-  `app-manuals` here just so it wouldn't collide with your existing `app/` folder in the zip)
+- Node.js + npm
 
-## Resulting structure
+## Install
 
-```
-helpers/
-  parse-inline.tsx
-
-features/
-  manuals/
-    index.ts                       ← what app/ routes import from
-    content/
-      types.ts
-      mastering-git.ts             ← the actual manual content
-      index.ts                     ← registry of all manuals
-    components/
-      code-block.tsx               ← copy-button code block
-      manual-accordion.tsx         ← recursive accordion (built on components/ui/accordion)
-      manual-explorer.tsx          ← search + expand/collapse-all
-      manual-page.tsx              ← composes title + explorer
-
-app/
-  manuals/
-    page.tsx                       ← lists all manuals
-    mastering-git/
-      page.tsx                     ← renders this one manual
+```bash
+npm install
 ```
 
-## One thing to check
-
-`manual-accordion.tsx` assumes your generated `components/ui/accordion.tsx` supports a
-controlled `value` / `onValueChange` pair as `string[]` (so multiple sections can be open at
-once — that's what lets nested sections and "expand all" work). This matched the docs when I
-checked, but the Base UI codegen can vary by shadcn version — if you get a type error on
-`value`/`onValueChange`, open that file and tell me what the actual prop names/types are and
-I'll adjust.
-
-## Run it
+## Run the dev server
 
 ```bash
 npm run dev
 ```
 
-Then visit `/manuals` and `/manuals/mastering-git`.
+Visit `/` to browse categories, or any manual directly, e.g. `/manuals/mastering-git`.
+The catalog reads straight from the static files in `lib/data/` — no database
+or account setup required.
+
+## Where things stand
+
+This branch (`main`) is the static, no-database version — everything above
+is all it needs. There's an active plan to move the content layer onto a
+real database with accounts and a proper admin/authoring panel (workspaces,
+roles, drag-and-drop reordering, the works); the full step-by-step plan and
+rationale live in the "next16-neon-better-auth" manual, browsable in-app at
+`/manuals/next16-neon-better-auth` — that work happens on its own branch and
+gets merged here once it's ready, so `main` stays the known-working version
+in the meantime.

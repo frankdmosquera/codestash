@@ -51,7 +51,10 @@ export const masteringGit: Manual = {
           id: "config-version",
           number: "2.1",
           title: "git --version",
-          blocks: [{ type: "p", text: "Checks the installed Git version." }],
+          blocks: [
+            { type: "p", text: "Checks the installed Git version." },
+            { type: "code", code: "git --version" },
+          ],
         },
         // 2.2 git config --global user.name
         {
@@ -74,7 +77,11 @@ export const masteringGit: Manual = {
           blocks: [
             {
               type: "p",
-              text: "Checks/sets the email associated with your commits.",
+              text: "Checks the configured email. To change it, add the email:",
+            },
+            {
+              type: "code",
+              code: 'git config --global user.email "heguer76@gmail.com"',
             },
           ],
         },
@@ -119,6 +126,7 @@ export const masteringGit: Manual = {
               type: "p",
               text: "Sets the default branch name for new repositories you create — so now the new name should be `main`.",
             },
+            { type: "code", code: "git config --global init.defaultBranch main" },
             {
               type: "p",
               text: "**What it does:** Sets the name Git uses for the initial branch whenever you run `git init` on a new repo — instead of Git's older default (`master`), new repos will start with a branch called `main`.",
@@ -154,6 +162,7 @@ export const masteringGit: Manual = {
           number: "4.1",
           title: "git status",
           blocks: [
+            { type: "code", code: "git status" },
             {
               type: "p",
               text: "Say we create a couple files in the tracked folder — it will show them as untracked files and ask if you want to include them.",
@@ -166,6 +175,7 @@ export const masteringGit: Manual = {
           number: "4.2",
           title: "git add [file/directory]",
           blocks: [
+            { type: "code", code: "git add <file-or-directory>" },
             {
               type: "p",
               text: "Prepares the changes for the next commit. This starts tracking a file or directory.",
@@ -178,6 +188,7 @@ export const masteringGit: Manual = {
           number: "4.3",
           title: "git add .",
           blocks: [
+            { type: "code", code: "git add ." },
             {
               type: "p",
               text: "Adds everything in the repository (new files, modified files, and deletions). The command used most often.",
@@ -190,6 +201,7 @@ export const masteringGit: Manual = {
           number: "4.4",
           title: "git add -A",
           blocks: [
+            { type: "code", code: "git add -A" },
             {
               type: "p",
               text: "Adds everything in the repository (new files, modified files, and deletions).",
@@ -202,6 +214,7 @@ export const masteringGit: Manual = {
           number: "4.5",
           title: 'git commit -m "commit message"',
           blocks: [
+            { type: "code", code: 'git commit -m "commit message"' },
             {
               type: "p",
               text: "Creates a new commit with a message describing the changes made, capturing the changes made to your local repository.",
@@ -214,6 +227,7 @@ export const masteringGit: Manual = {
           number: "4.6",
           title: "git log",
           blocks: [
+            { type: "code", code: "git log" },
             {
               type: "p",
               text: "Shows a list of all commits in the repository — displaying the author, date, and commit message for each.",
@@ -274,6 +288,7 @@ Date: Tue Aug 4 16:50:13 2026 -0600
           number: "5.2",
           title: "git checkout .",
           blocks: [
+            { type: "code", code: "git checkout ." },
             {
               type: "p",
               text: "Say you're working on the project and don't want those changes. Instead of going back to a specific commit, use `git checkout .` to discard changes and start over.",
@@ -345,6 +360,7 @@ git push -u origin main`,
           number: "7.1",
           title: "git branch",
           blocks: [
+            { type: "code", code: "git branch" },
             {
               type: "p",
               text: "Lists all the branches in the current repository. Shows the current branch you're on, highlighted with an asterisk.",
@@ -357,6 +373,7 @@ git push -u origin main`,
           number: "7.2",
           title: "git branch new-branch",
           blocks: [
+            { type: "code", code: "git branch new-branch" },
             {
               type: "p",
               text: "Creates a new branch, but doesn't switch you to it.",
@@ -369,6 +386,7 @@ git push -u origin main`,
           number: "7.3",
           title: "git checkout new-branch",
           blocks: [
+            { type: "code", code: "git checkout new-branch" },
             { type: "p", text: "Switches you to the newly created branch." },
           ],
         },
@@ -378,6 +396,7 @@ git push -u origin main`,
           number: "7.4",
           title: "git checkout -b new-branch-name",
           blocks: [
+            { type: "code", code: "git checkout -b new-branch-name" },
             {
               type: "p",
               text: "Creates the branch and switches you to it in one step. Note: it branches off whatever branch you're currently on — not necessarily main — so be careful depending on what you're doing.",
@@ -390,6 +409,10 @@ git push -u origin main`,
           number: "7.5",
           title: "git branch new-branch-name some-other-branch",
           blocks: [
+            {
+              type: "code",
+              code: "git branch new-branch-name some-other-branch",
+            },
             {
               type: "p",
               text: "Creates a branch from a selected branch — no need to checkout first.",
@@ -413,10 +436,12 @@ git push -u origin main`,
           number: "8.1",
           title: "git push --set-upstream origin feature-branch",
           blocks: [
+            { type: "code", code: "git push --set-upstream origin feature-branch" },
             {
               type: "p",
               text: "Pushes to GitHub and keeps things in sync. `git push -u origin feature-branch` is an alternative shorthand.",
             },
+            { type: "code", code: "git push -u origin feature-branch" },
           ],
         },
         // 8.2 git push
@@ -425,6 +450,7 @@ git push -u origin main`,
           number: "8.2",
           title: "git push",
           blocks: [
+            { type: "code", code: "git push" },
             { type: "p", text: "Once linked, you can just run `git push`." },
           ],
         },
@@ -434,6 +460,7 @@ git push -u origin main`,
           number: "8.3",
           title: "git pull",
           blocks: [
+            { type: "code", code: "git pull" },
             {
               type: "p",
               text: "Fetches changes from the remote repo. If someone makes changes on GitHub, this brings you up to date.",

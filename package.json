@@ -1,6 +1,7 @@
 {
-  "name": "thegoodbrush",
+  "name": "codestash",
   "version": "0.1.0",
+    "date": "2026-08-05",
   "private": true,
   "scripts": {
     "dev": "next dev",

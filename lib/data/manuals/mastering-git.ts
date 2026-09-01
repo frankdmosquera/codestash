@@ -259,17 +259,74 @@ Date: Tue Aug 4 16:50:13 2026 -0600
     },
 
     // ============================================================
-    // 5. GIT ADVANCED
+    // 5. GIT BASICS RECAP
+    // ============================================================
+    {
+      id: "basics-recap",
+      number: "5",
+      title: "Git Basics Recap",
+      children: [
+        // 5.1 First time: new repo → GitHub
+        {
+          id: "recap-first-time",
+          number: "5.1",
+          title: "First time: new repo → GitHub",
+          blocks: [
+            { type: "code", code: "git init" },
+            { type: "code", code: "git add ." },
+            { type: "code", code: 'git commit -m ""' },
+            {
+              type: "code",
+              code: `git remote add origin ...
+git branch -M main
+git push -u origin main`,
+            },
+          ],
+        },
+        // 5.2 Second time: already connected
+        {
+          id: "recap-second-time",
+          number: "5.2",
+          title: "Second time: already connected",
+          blocks: [
+            { type: "code", code: "git add ." },
+            { type: "code", code: 'git commit -m ""' },
+            { type: "code", code: "git push" },
+          ],
+        },
+        // 5.3 Every time after that
+        {
+          id: "recap-every-time",
+          number: "5.3",
+          title: "Every time after that",
+          blocks: [
+            {
+              type: "code",
+              code: `git add .
+git commit -m "my third message"
+git push`,
+            },
+            {
+              type: "p",
+              text: "And every round after that: add → commit → push.",
+            },
+          ],
+        },
+      ],
+    },
+
+    // ============================================================
+    // 6. GIT ADVANCED
     // ============================================================
     {
       id: "advanced",
-      number: "5",
+      number: "6",
       title: "Git Advanced",
       children: [
-        // 5.1 Moving to a different commit
+        // 6.1 Moving to a different commit
         {
           id: "checkout-commit",
-          number: "5.1",
+          number: "6.1",
           title: "Moving to a different commit (DOM)",
           blocks: [
             {
@@ -282,10 +339,10 @@ Date: Tue Aug 4 16:50:13 2026 -0600
             },
           ],
         },
-        // 5.2 git checkout .
+        // 6.2 git checkout .
         {
           id: "checkout-dot",
-          number: "5.2",
+          number: "6.2",
           title: "git checkout .",
           blocks: [
             { type: "code", code: "git checkout ." },
@@ -299,11 +356,11 @@ Date: Tue Aug 4 16:50:13 2026 -0600
     },
 
     // ============================================================
-    // 6. GITHUB
+    // 7. GITHUB
     // ============================================================
     {
       id: "github",
-      number: "6",
+      number: "7",
       title: "GitHub",
       blocks: [
         {
@@ -312,10 +369,10 @@ Date: Tue Aug 4 16:50:13 2026 -0600
         },
       ],
       children: [
-        // 6.1 Start a repo on GitHub
+        // 7.1 Start a repo on GitHub
         {
           id: "github-start-repo",
-          number: "6.1",
+          number: "7.1",
           title: "Start a repo on GitHub",
           blocks: [
             {
@@ -324,10 +381,10 @@ Date: Tue Aug 4 16:50:13 2026 -0600
             },
           ],
         },
-        // 6.2 git remote add origin
+        // 7.2 git remote add origin
         {
           id: "github-remote-add",
-          number: "6.2",
+          number: "7.2",
           title: "git remote add origin",
           blocks: [
             {
@@ -347,17 +404,17 @@ git push -u origin main`,
     },
 
     // ============================================================
-    // 7. BRANCHING
+    // 8. BRANCHING
     // ============================================================
     {
       id: "branching",
-      number: "7",
+      number: "8",
       title: "Branching",
       children: [
-        // 7.1 git branch
+        // 8.1 git branch
         {
           id: "git-branch",
-          number: "7.1",
+          number: "8.1",
           title: "git branch",
           blocks: [
             { type: "code", code: "git branch" },
@@ -367,10 +424,10 @@ git push -u origin main`,
             },
           ],
         },
-        // 7.2 git branch new-branch
+        // 8.2 git branch new-branch
         {
           id: "git-branch-new",
-          number: "7.2",
+          number: "8.2",
           title: "git branch new-branch",
           blocks: [
             { type: "code", code: "git branch new-branch" },
@@ -380,20 +437,20 @@ git push -u origin main`,
             },
           ],
         },
-        // 7.3 git checkout new-branch
+        // 8.3 git checkout new-branch
         {
           id: "git-checkout-new",
-          number: "7.3",
+          number: "8.3",
           title: "git checkout new-branch",
           blocks: [
             { type: "code", code: "git checkout new-branch" },
             { type: "p", text: "Switches you to the newly created branch." },
           ],
         },
-        // 7.4 git checkout -b new-branch-name
+        // 8.4 git checkout -b new-branch-name
         {
           id: "git-checkout-b",
-          number: "7.4",
+          number: "8.4",
           title: "git checkout -b new-branch-name",
           blocks: [
             { type: "code", code: "git checkout -b new-branch-name" },
@@ -403,10 +460,10 @@ git push -u origin main`,
             },
           ],
         },
-        // 7.5 git branch new-branch-name some-other-branch
+        // 8.5 git branch new-branch-name some-other-branch
         {
           id: "git-branch-from",
-          number: "7.5",
+          number: "8.5",
           title: "git branch new-branch-name some-other-branch",
           blocks: [
             {
@@ -423,17 +480,17 @@ git push -u origin main`,
     },
 
     // ============================================================
-    // 8. LOCAL COMMITS VS (CLOUD) GITHUB
+    // 9. LOCAL COMMITS VS (CLOUD) GITHUB
     // ============================================================
     {
       id: "local-vs-cloud",
-      number: "8",
+      number: "9",
       title: "Local Commits vs (Cloud) GitHub",
       children: [
-        // 8.1 git push --set-upstream origin feature-branch
+        // 9.1 git push --set-upstream origin feature-branch
         {
           id: "push-upstream",
-          number: "8.1",
+          number: "9.1",
           title: "git push --set-upstream origin feature-branch",
           blocks: [
             { type: "code", code: "git push --set-upstream origin feature-branch" },
@@ -444,20 +501,20 @@ git push -u origin main`,
             { type: "code", code: "git push -u origin feature-branch" },
           ],
         },
-        // 8.2 git push
+        // 9.2 git push
         {
           id: "git-push",
-          number: "8.2",
+          number: "9.2",
           title: "git push",
           blocks: [
             { type: "code", code: "git push" },
             { type: "p", text: "Once linked, you can just run `git push`." },
           ],
         },
-        // 8.3 git pull
+        // 9.3 git pull
         {
           id: "git-pull",
-          number: "8.3",
+          number: "9.3",
           title: "git pull",
           blocks: [
             { type: "code", code: "git pull" },
@@ -471,11 +528,11 @@ git push -u origin main`,
     },
 
     // ============================================================
-    // 9. MERGING BACK TO MAIN
+    // 10. MERGING BACK TO MAIN
     // ============================================================
     {
       id: "merging-main",
-      number: "9",
+      number: "10",
       title: "Merging Back to Main",
       blocks: [
         {
@@ -503,11 +560,11 @@ git push -u origin main`,
     },
 
     // ============================================================
-    // 10. TYPICAL WORKFLOW
+    // 11. TYPICAL WORKFLOW
     // ============================================================
     {
       id: "workflow",
-      number: "10",
+      number: "11",
       title: "Typical Workflow",
       blocks: [
         {
@@ -520,6 +577,102 @@ git push -u origin main`,
             "Open a pull request",
             "Merge the changes",
             "Pull the merged changes into your local main branch",
+          ],
+        },
+      ],
+    },
+
+    // ============================================================
+    // 12. FORMAT TEST (fake data — nesting depth check)
+    // ============================================================
+    {
+      id: "format-test",
+      number: "12",
+      title: "Format Test",
+      blocks: [
+        {
+          type: "p",
+          text: "Fake section for testing how deep nesting renders — **not real git content**.",
+        },
+      ],
+      children: [
+        // 12.1 Test branch A
+        {
+          id: "format-test-branch-a",
+          number: "12.1",
+          title: "Test Branch A",
+          blocks: [
+            { type: "p", text: "Placeholder text for branch A." },
+            { type: "code", code: "git fake-command --branch a" },
+          ],
+          children: [
+            // 12.1.1 One level deeper
+            {
+              id: "format-test-branch-a-1",
+              number: "12.1.1",
+              title: "Branch A, one level deeper",
+              blocks: [
+                { type: "note", text: "This is a fake note at depth 3." },
+                {
+                  type: "list",
+                  items: ["Fake item one", "Fake item two", "Fake item three"],
+                },
+              ],
+              children: [
+                // 12.1.1.1 Two levels deeper than 12.1
+                {
+                  id: "format-test-branch-a-1-1",
+                  number: "12.1.1.1",
+                  title: "Branch A, deepest level",
+                  blocks: [
+                    {
+                      type: "p",
+                      text: "Bottom of the test — four levels deep from the top-level section.",
+                    },
+                    { type: "code", code: "git fake-command --depth 4" },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        // 12.2 Test branch B
+        {
+          id: "format-test-branch-b",
+          number: "12.2",
+          title: "Test Branch B",
+          blocks: [
+            { type: "p", text: "Placeholder text for branch B." },
+            { type: "code", code: "git fake-command --branch b" },
+          ],
+          children: [
+            // 12.2.1 One level deeper
+            {
+              id: "format-test-branch-b-1",
+              number: "12.2.1",
+              title: "Branch B, one level deeper",
+              blocks: [
+                { type: "note", text: "Another fake note, this time on branch B." },
+                {
+                  type: "list",
+                  items: ["Fake item alpha", "Fake item beta"],
+                },
+              ],
+              children: [
+                // 12.2.1.1 Two levels deeper than 12.2
+                {
+                  id: "format-test-branch-b-1-1",
+                  number: "12.2.1.1",
+                  title: "Branch B, deepest level",
+                  blocks: [
+                    {
+                      type: "p",
+                      text: "Bottom of branch B — also four levels deep.",
+                    },
+                  ],
+                },
+              ],
+            },
           ],
         },
       ],

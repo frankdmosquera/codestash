@@ -4,7 +4,6 @@ import { dockerForFrontendDevs } from "./docker-for-frontend-devs";
 import { understandingRsc } from "./understanding-rsc";
 import { cicdBasics } from "./cicd-basics";
 import { debuggingNextjs } from "./debugging-nextjs";
-import { next16NeonBetterAuth } from "./next16-neon-better-auth";
 
 export const manuals: Manual[] = [
   masteringGit,
@@ -12,7 +11,6 @@ export const manuals: Manual[] = [
   understandingRsc,
   cicdBasics,
   debuggingNextjs,
-  next16NeonBetterAuth,
 ];
 
 export function getManual(slug: string): Manual | undefined {

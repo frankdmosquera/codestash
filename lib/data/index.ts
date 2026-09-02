@@ -6,17 +6,22 @@ import { helpers, getHelper } from "./helpers";
 import { blocks, getBlock } from "./blocks";
 import { aiInstructions, getAiInstruction } from "./ai-instructions";
 
-function toCatalogItems<T extends { slug: string; title: string; description?: string; createdAt?: string }>(
-  category: CatalogCategoryKey,
-  items: T[],
-): CatalogItem[] {
+function toCatalogItems<
+  T extends {
+    slug: string;
+    title: string;
+    description?: string;
+    subtitle?: string; // Manual's equivalent of Snippet's `description`
+    createdAt?: string;
+  },
+>(category: CatalogCategoryKey, items: T[]): CatalogItem[] {
   const categoryHref = CATEGORIES[category].href;
   return items.map((item) => ({
     id: `${category}-${item.slug}`,
     category,
     title: item.title,
     href: `${categoryHref}/${item.slug}`,
-    description: item.description,
+    description: item.description ?? item.subtitle,
     createdAt: item.createdAt,
   }));
 }

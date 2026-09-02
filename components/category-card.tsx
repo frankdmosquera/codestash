@@ -8,20 +8,26 @@ import { Card } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getTopItems } from "@/lib/helpers/get-top-items";
-import { CATEGORIES } from "@/lib/constants/categories";
+import { CATEGORIES, getCategoryBySlug } from "@/lib/constants/categories";
 import type { CatalogCategoryKey } from "@/lib/data/types";
-import { getItemsByCategory } from "@/lib/data";
+import { getResolvedItemsForCategory } from "@/lib/actions/manual-actions";
 
 type CategoryCardProps = {
   categoryKey: CatalogCategoryKey;
 };
 
-export function CategoryCard({ categoryKey }: CategoryCardProps) {
+export async function CategoryCard({ categoryKey }: CategoryCardProps) {
   const { label, href, icon: Icon } = CATEGORIES[categoryKey];
-  const items = getTopItems(getItemsByCategory(categoryKey), 4);
+  const categorySlug = href.slice(1); // href is "/manuals" etc.
+  const allItems = await getResolvedItemsForCategory(
+    categorySlug,
+    getCategoryBySlug(categorySlug)?.key,
+    href,
+  );
+  const items = getTopItems(allItems, 4);
 
   return (
-    <Card className="flex h-56 flex-col justify-between bg-neutral-900 p-6">
+    <Card className="flex h-full flex-col justify-between bg-neutral-900 p-6">
       <div>
         <div className="flex items-center gap-2">
           <Icon className="size-5 text-teal-400" strokeWidth={1.75} />

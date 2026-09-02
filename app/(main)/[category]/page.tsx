@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getCategoryBySlug } from "@/lib/constants/categories";
-import { getItemsByCategory } from "@/lib/data";
+import { getResolvedItemsForCategory } from "@/lib/actions/manual-actions";
 
 export async function generateMetadata({
   params,
@@ -24,7 +24,7 @@ export default async function CategoryPage({
   const category = getCategoryBySlug(categorySlug);
   if (!category) notFound();
 
-  const items = getItemsByCategory(category.key);
+  const items = await getResolvedItemsForCategory(categorySlug, category.key, category.href);
   const Icon = category.icon;
 
   return (

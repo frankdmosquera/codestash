@@ -106,11 +106,12 @@ codestash/
 │   │       │   ├── invitation-schema.ts
 │   │       │   ├── relations.ts
 │   │       │   └── index.ts
-│   │       └── app-schema/           # ours: category, manual, section, memberEditQuota
+│   │       └── app-schema/           # ours: category, manual, section, snippet, memberEditQuota
 │   │           ├── category-schema.ts # org-scoped, dynamic, drag-and-drop rank — sidebar now reads
 │   │           │                      # from here for any org that has categories seeded into it
 │   │           ├── manual-schema.ts  # has categoryId now
 │   │           ├── section-schema.ts
+│   │           ├── snippet-schema.ts # hooks/helpers/blocks/ai-instructions — one shared table
 │   │           ├── member-edit-quota-schema.ts
 │   │           ├── relations.ts
 │   │           └── index.ts
@@ -137,5 +138,10 @@ codestash/
 │   └── use-mobile.ts
 ├── customHooks/
 │   └── useScrollDirection.ts
+├── scripts/
+│   ├── seed-snippets.ts              # one-time: static hooks/helpers/blocks/ai-instructions → snippet
+│   │                                  # table, for the real Codestash org. Re-run safe (onConflictDoNothing).
+│   └── seed-mastering-git-manual.ts  # one-time: mastering-git.ts → manual+section tree. No-ops if
+│                                      # already seeded (it was, from an earlier session).
 │
 └── public/

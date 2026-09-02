@@ -205,6 +205,36 @@ Also added: `organization.plan` (defaults `"free"`) — groundwork for a
 future free-vs-paid category cap, not enforced anywhere yet, no billing
 wired up.
 
+All static `lib/data/*` content is being retired, not just manuals — the
+goal is nothing static left (content, links, strings all DB-backed).
+`snippet` (`lib/db/schema/app-schema/snippet-schema.ts`) is one shared
+table for hooks/helpers/blocks/ai-instructions (they're the same shape —
+title + code + optional description). `scripts/seed-snippets.ts` migrated
+all 20 existing static items into it for the real Codestash workspace;
+re-running it is safe (`onConflictDoNothing` on org+slug). Nothing reads
+from this table yet, though — the public `/[category]` pages and sidebar
+subitems still resolve snippets from the static `lib/data/*` files, same
+gap the DB-backed `manual` table had until `getManualBySlug` was wired up
+in `lib/actions/manual-actions.ts`. Wiring an equivalent snippet read path
+is the next piece.
+
+`lib/data/manuals/mastering-git.ts` (the one hand-authored manual) had
+picked up stray content at some point — an inserted "Git Basics Recap"
+section and a section literally titled "Format Test (fake data — nesting
+depth check)" appended after it, neither of which exist on `main` or the
+deployed site. Restored from `main` (2026-09-02) — verified against the
+live site's actual section list first, not assumed. Its DB row already
+existed correctly (10 real top-level sections, seeded in an earlier
+session) — `[category]/[subpage]/page.tsx` checks DB before static, so a
+signed-in Codestash user was already seeing the correct version; only
+signed-out visitors / other workspaces were getting the corrupted static
+fallback. If a static file's content ever looks off again, diff it against
+`main` and cross-check the live site before trusting either.
+
 For the up-to-date step-by-step plan and what's done vs. still open, read
 the "next16-neon-better-auth" manual in-app rather than this file — this
-file only covers how to get the project running locally.
+file only covers how to get the project running locally. Note: that
+manual itself is currently DB-backed content for the signed-in Codestash
+workspace, not a static file — it won't render for a signed-out visitor or
+a different workspace, and the version on the deployed `main` branch is a
+stale pre-DB-work snapshot.

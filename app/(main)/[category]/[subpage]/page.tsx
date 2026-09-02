@@ -5,7 +5,6 @@ import { getCategoryBySlug } from "@/lib/constants/categories";
 import { getManual, getSnippet } from "@/lib/data";
 import { getManualBySlug } from "@/lib/actions/manual-actions";
 import { ManualPage } from "@/components/manuals/manual-page";
-import { DbManualPage } from "@/components/manuals/db-manual-page";
 import { SnippetPage } from "@/components/snippet-page";
 
 export async function generateMetadata({
@@ -45,5 +44,5 @@ export default async function SubpagePage({
 
   const dbManual = await getManualBySlug(categorySlug, subpage);
   if (!dbManual) notFound();
-  return <DbManualPage manual={dbManual} />;
+  return <ManualPage manual={dbManual} />;
 }

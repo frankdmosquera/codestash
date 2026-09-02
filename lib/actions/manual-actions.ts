@@ -8,7 +8,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { category, manual } from "@/lib/db/schema/app-schema";
 import { getItemsByCategory } from "@/lib/data";
-import type { CatalogCategoryKey, ContentBlock } from "@/lib/data/types";
+import type { CatalogCategoryKey, ContentBlock, Manual, ManualSection } from "@/lib/data/types";
 
 export type DbManualRow = {
   id: string;
@@ -38,10 +38,6 @@ export async function getManualsForCategory(categoryId: string): Promise<DbManua
     .orderBy(asc(manual.title));
 }
 
-export type DbManualWithSections = DbManualRow & {
-  sections: { id: string; title: string; blocks: ContentBlock[] }[];
-};
-
 // Shared by getManualBySlug and getResolvedItemsForCategory — both need to
 // turn a URL category slug into the caller's DB category row for that org.
 async function getDbCategoryBySlug(categorySlug: string) {
@@ -54,12 +50,55 @@ async function getDbCategoryBySlug(categorySlug: string) {
   });
 }
 
+type FlatSectionRow = {
+  id: string;
+  parentId: string | null;
+  rank: string;
+  title: string;
+  blocks: unknown;
+};
+
+// Sections are stored flat with parentId + rank (see section-schema.ts) —
+// the dotted "1.2" numbering is computed here by walking the tree in rank
+// order, never stored, so reordering or inserting a section never touches
+// its siblings' numbers.
+function buildSectionTree(rows: FlatSectionRow[]): ManualSection[] {
+  const byParent = new Map<string | null, FlatSectionRow[]>();
+  for (const row of rows) {
+    const siblings = byParent.get(row.parentId) ?? [];
+    siblings.push(row);
+    byParent.set(row.parentId, siblings);
+  }
+  for (const siblings of byParent.values()) {
+    siblings.sort((a, b) => a.rank.localeCompare(b.rank));
+  }
+
+  function build(parentId: string | null, prefix: string): ManualSection[] {
+    const siblings = byParent.get(parentId) ?? [];
+    return siblings.map((row, i) => {
+      const number = prefix ? `${prefix}.${i + 1}` : `${i + 1}`;
+      const children = build(row.id, number);
+      return {
+        id: row.id,
+        number,
+        title: row.title,
+        blocks: row.blocks as ContentBlock[],
+        ...(children.length > 0 ? { children } : {}),
+      };
+    });
+  }
+
+  return build(null, "");
+}
+
 // Resolves a DB-backed manual for the [category]/[subpage] route — checked
-// only after the static catalog comes up empty for that slug. Wrapped in
-// `cache` since generateMetadata and the page component both need it for
-// the same request.
+// only after the static catalog comes up empty for that slug. Returns the
+// same `Manual` shape the static catalog uses, so the page can render it
+// through the existing ManualPage/ManualAccordion instead of a separate
+// component. Wrapped in `cache` since generateMetadata and the page
+// component both need it for the same request.
 export const getManualBySlug = cache(
-  async (categorySlug: string, manualSlug: string): Promise<DbManualWithSections | undefined> => {
+  async (categorySlug: string, manualSlug: string): Promise<Manual | undefined> => {
     const categoryRow = await getDbCategoryBySlug(categorySlug);
     if (!categoryRow) return undefined;
 
@@ -69,7 +108,13 @@ export const getManualBySlug = cache(
     });
     if (!manualRow) return undefined;
 
-    return manualRow as DbManualWithSections;
+    return {
+      slug: manualRow.slug,
+      title: manualRow.title,
+      subtitle: manualRow.subtitle ?? "",
+      createdAt: manualRow.createdAt.toISOString(),
+      sections: buildSectionTree(manualRow.sections),
+    };
   },
 );
 

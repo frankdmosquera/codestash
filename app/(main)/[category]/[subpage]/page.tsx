@@ -14,14 +14,14 @@ export async function generateMetadata({
   const category = getCategoryBySlug(categorySlug);
   if (!category) return { title: "Codestash" };
 
+  const dbManual = await getManualBySlug(categorySlug, subpage);
+  if (dbManual) return { title: dbManual.title };
+
   const staticTitle =
     category.key === "manuals"
       ? getManual(subpage)?.title
       : getSnippet(category.key, subpage)?.title;
-  if (staticTitle) return { title: staticTitle };
-
-  const dbManual = await getManualBySlug(categorySlug, subpage);
-  return { title: dbManual?.title ?? category.label };
+  return { title: staticTitle ?? category.label };
 }
 
 export default async function SubpagePage({
@@ -31,9 +31,14 @@ export default async function SubpagePage({
   const category = getCategoryBySlug(categorySlug);
   if (!category) notFound();
 
-  // Static catalog first (the fixed 5 built-in categories' seed content),
-  // then the DB-backed catalog for this org — lets a workspace's own
-  // manuals live at the same category slug without colliding.
+  // DB-backed content first — same "DB overrides static" priority as the
+  // sidebar and category page, so a workspace's own manual at this slug
+  // (e.g. a trimmed rewrite of a built-in one) isn't shadowed by the
+  // static catalog entry sharing that slug. Static is the fallback for
+  // slugs the DB doesn't have anything for.
+  const dbManual = await getManualBySlug(categorySlug, subpage);
+  if (dbManual) return <ManualPage manual={dbManual} />;
+
   if (category.key === "manuals") {
     const staticManual = getManual(subpage);
     if (staticManual) return <ManualPage manual={staticManual} />;
@@ -42,7 +47,5 @@ export default async function SubpagePage({
     if (staticSnippet) return <SnippetPage snippet={staticSnippet} />;
   }
 
-  const dbManual = await getManualBySlug(categorySlug, subpage);
-  if (!dbManual) notFound();
-  return <ManualPage manual={dbManual} />;
+  notFound();
 }

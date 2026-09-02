@@ -167,7 +167,7 @@ export function CategoryNavItem({
             <div className="relative">
               <div
                 ref={scrollRef}
-                className="max-h-64 scrollbar-thin overflow-y-auto overscroll-contain [scrollbar-color:var(--color-neutral-700)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-700 [&::-webkit-scrollbar-track]:bg-transparent"
+                className="max-h-36 scrollbar-thin overflow-y-auto overscroll-contain [scrollbar-color:var(--color-neutral-700)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-700 [&::-webkit-scrollbar-track]:bg-transparent"
               >
                 {items.map((item) => (
                   <SidebarMenuSubItem key={item.id}>

@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 
 import { getCategoryBySlug } from "@/lib/constants/categories";
 import { getManual, getSnippet } from "@/lib/data";
+import { getManualBySlug } from "@/lib/actions/manual-actions";
 import { ManualPage } from "@/components/manuals/manual-page";
+import { DbManualPage } from "@/components/manuals/db-manual-page";
 import { SnippetPage } from "@/components/snippet-page";
 
 export async function generateMetadata({
@@ -13,12 +15,14 @@ export async function generateMetadata({
   const category = getCategoryBySlug(categorySlug);
   if (!category) return { title: "Codestash" };
 
-  const title =
+  const staticTitle =
     category.key === "manuals"
       ? getManual(subpage)?.title
       : getSnippet(category.key, subpage)?.title;
+  if (staticTitle) return { title: staticTitle };
 
-  return { title: title ?? category.label };
+  const dbManual = await getManualBySlug(categorySlug, subpage);
+  return { title: dbManual?.title ?? category.label };
 }
 
 export default async function SubpagePage({
@@ -28,13 +32,18 @@ export default async function SubpagePage({
   const category = getCategoryBySlug(categorySlug);
   if (!category) notFound();
 
+  // Static catalog first (the fixed 5 built-in categories' seed content),
+  // then the DB-backed catalog for this org — lets a workspace's own
+  // manuals live at the same category slug without colliding.
   if (category.key === "manuals") {
-    const manual = getManual(subpage);
-    if (!manual) notFound();
-    return <ManualPage manual={manual} />;
+    const staticManual = getManual(subpage);
+    if (staticManual) return <ManualPage manual={staticManual} />;
+  } else {
+    const staticSnippet = getSnippet(category.key, subpage);
+    if (staticSnippet) return <SnippetPage snippet={staticSnippet} />;
   }
 
-  const snippet = getSnippet(category.key, subpage);
-  if (!snippet) notFound();
-  return <SnippetPage snippet={snippet} />;
+  const dbManual = await getManualBySlug(categorySlug, subpage);
+  if (!dbManual) notFound();
+  return <DbManualPage manual={dbManual} />;
 }

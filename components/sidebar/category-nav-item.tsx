@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 import {
   Collapsible,
@@ -19,17 +20,24 @@ import {
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { getItemsByCategory, type CatalogCategoryKey } from "@/lib/data";
+import { getManualsForCategory } from "@/lib/actions/manual-actions";
 
 type SortMode = "alpha" | "recent";
+type SubItem = { id: string; title: string; href: string; createdAt?: string };
 
 export type CategoryNavItemProps = {
   icon: LucideIcon;
   label: string;
   href: string;
   // Only set for the fixed set of categories that have static subpage data
-  // today (see lib/data). Custom/DB-only categories have no subpages yet —
-  // rendered as the existing empty state, not a crash.
+  // today (see lib/data). Falls back to the empty state when neither this
+  // nor `dbCategoryId` resolves any items.
   staticKey?: CatalogCategoryKey;
+  // Set for a DB-backed category row — when present, subitems are fetched
+  // from the `manual` table scoped to this category, falling back to the
+  // static catalog (if `staticKey` matches) only once that query resolves
+  // with zero rows.
+  dbCategoryId?: string;
   // Rendered as a sibling of the trigger button, not nested inside it —
   // interactive drag handles can't live inside another interactive
   // element. Passed in by a sortable wrapper; omitted entirely when this
@@ -42,6 +50,7 @@ export function CategoryNavItem({
   label,
   href,
   staticKey,
+  dbCategoryId,
   dragHandle,
 }: CategoryNavItemProps) {
   const [open, setOpen] = useState(false);
@@ -49,17 +58,51 @@ export function CategoryNavItem({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollDown, setCanScrollDown] = useState(false);
 
+  const { data: dbManuals, isLoading: dbLoading } = useQuery({
+    queryKey: ["manuals", dbCategoryId],
+    queryFn: () => getManualsForCategory(dbCategoryId!),
+    enabled: open && !!dbCategoryId,
+  });
+
+  const staticItems: SubItem[] = useMemo(() => {
+    if (!staticKey) return [];
+    return getItemsByCategory(staticKey).map((item) => ({
+      id: item.id,
+      title: item.title,
+      href: item.href,
+      createdAt: item.createdAt,
+    }));
+  }, [staticKey]);
+
   // Only computed once the panel is actually opened — no reason to sort
   // every category's items on every sidebar render.
   const items = useMemo(() => {
-    if (!open || !staticKey) return [];
-    const list = getItemsByCategory(staticKey);
-    return [...list].sort((a, b) => {
+    if (!open) return [];
+
+    let raw: SubItem[];
+    if (dbCategoryId) {
+      // Wait for the DB query rather than flashing static content first —
+      // avoids a fallback-then-swap flicker on open.
+      if (dbLoading) return [];
+      raw =
+        dbManuals && dbManuals.length > 0
+          ? dbManuals.map((m) => ({
+              id: m.id,
+              title: m.title,
+              href: `${href}/${m.slug}`,
+              createdAt: new Date(m.createdAt).toISOString(),
+            }))
+          : staticItems;
+    } else {
+      raw = staticItems;
+    }
+
+    return [...raw].sort((a, b) => {
       if (sort === "alpha") return a.title.localeCompare(b.title);
       // "recent" = newest createdAt first; items missing one sort last.
       return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
     });
-  }, [open, sort, staticKey]);
+  }, [open, sort, dbCategoryId, dbLoading, dbManuals, staticItems, href]);
 
   // Drives the bottom fade below — without it, a truncated list looks
   // identical to a complete one since the native scrollbar is invisible

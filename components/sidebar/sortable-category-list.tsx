@@ -51,6 +51,7 @@ function SortableItem({ row }: { row: DbCategoryRow }) {
         label={row.label}
         href={`/${row.slug}`}
         staticKey={getCategoryBySlug(row.slug)?.key}
+        dbCategoryId={row.id}
         dragHandle={
           <button
             type="button"

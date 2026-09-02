@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getItemsByCategory, type CatalogCategoryKey } from "@/lib/data";
 import { getManualsForCategory } from "@/lib/actions/manual-actions";
+import { useCategoryOpen } from "./category-open-context";
 
 type SortMode = "alpha" | "recent";
 type SortDirection = "asc" | "desc";
@@ -54,7 +55,7 @@ export function CategoryNavItem({
   dbCategoryId,
   dragHandle,
 }: CategoryNavItemProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useCategoryOpen(href);
   const [sort, setSort] = useState<SortMode>("alpha");
   const [direction, setDirection] = useState<SortDirection>("asc");
   const scrollRef = useRef<HTMLDivElement>(null);

@@ -15,6 +15,7 @@ import { authClient, useSession } from "@/lib/auth-client";
 import { getCategoriesForActiveOrg } from "@/lib/actions/category-actions";
 import { useAutoActiveOrganization } from "@/lib/hooks/use-auto-active-organization";
 import { CategoryNavItem } from "./category-nav-item";
+import { CategoryOpenProvider } from "./category-open-context";
 import { SortableCategoryList } from "./sortable-category-list";
 import { WorkspaceNavItem } from "./workspace-nav-item";
 
@@ -54,21 +55,23 @@ export function AppSidebar() {
             Browse
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            {useDbCategories ? (
-              <SortableCategoryList categories={dbCategories} />
-            ) : (
-              <SidebarMenu>
-                {CATEGORY_LIST.map((category) => (
-                  <CategoryNavItem
-                    key={category.key}
-                    icon={category.icon}
-                    label={category.label}
-                    href={category.href}
-                    staticKey={category.key}
-                  />
-                ))}
-              </SidebarMenu>
-            )}
+            <CategoryOpenProvider>
+              {useDbCategories ? (
+                <SortableCategoryList categories={dbCategories} />
+              ) : (
+                <SidebarMenu>
+                  {CATEGORY_LIST.map((category) => (
+                    <CategoryNavItem
+                      key={category.key}
+                      icon={category.icon}
+                      label={category.label}
+                      href={category.href}
+                      staticKey={category.key}
+                    />
+                  ))}
+                </SidebarMenu>
+              )}
+            </CategoryOpenProvider>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

@@ -160,7 +160,7 @@ export function CategoryNavItem({
           </CollapsibleTrigger>
         </div>
         <CollapsibleContent>
-          <SidebarMenuSub className="mt-1.5 mr-3.5 mb-1.5 ml-5 rounded-md border-neutral-800 bg-neutral-900 py-1.5">
+          <SidebarMenuSub className="mt-1.5 mr-3.5 mb-1.5 ml-14 rounded-md border-neutral-800 bg-neutral-900 py-1.5">
             <li className="flex items-center gap-1 px-1 pb-1 text-xs text-neutral-500">
               <button
                 type="button"

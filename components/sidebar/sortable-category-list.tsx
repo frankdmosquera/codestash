@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { GripVertical } from "lucide-react";
+import { Grip } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -61,7 +61,7 @@ function SortableItem({ row }: { row: DbCategoryRow }) {
             aria-label={`Reorder ${row.label}`}
             className="touch-none rounded p-1.5 text-neutral-600 hover:bg-neutral-800 hover:text-neutral-300"
           >
-            <GripVertical className="size-4" />
+            <Grip className="size-4" />
           </button>
         }
       />

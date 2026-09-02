@@ -142,7 +142,10 @@ export function CategoryNavItem({
             render={
               <SidebarMenuButton
                 size="lg"
-                className="min-w-0 flex-1 text-neutral-200 [&_svg]:size-5 [&_svg]:text-teal-400 hover:bg-neutral-800 hover:text-white"
+                className={cn(
+                  "min-w-0 flex-1 text-neutral-200 [&_svg]:size-5 [&_svg]:text-teal-400 hover:bg-neutral-800 hover:text-white",
+                  open && "bg-neutral-800 text-white",
+                )}
               />
             }
           >

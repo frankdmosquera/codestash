@@ -14,6 +14,7 @@ import { CATEGORY_LIST } from "@/lib/constants/categories";
 import { authClient, useSession } from "@/lib/auth-client";
 import { getCategoriesForActiveOrg } from "@/lib/actions/category-actions";
 import { useAutoActiveOrganization } from "@/lib/hooks/use-auto-active-organization";
+import { useCloseSidebarOnOutsideClick } from "@/lib/hooks/use-close-sidebar-on-outside-click";
 import { CategoryNavItem } from "./category-nav-item";
 import { CategoryOpenProvider } from "./category-open-context";
 import { SortableCategoryList } from "./sortable-category-list";
@@ -23,6 +24,7 @@ export function AppSidebar() {
   const { data: session } = useSession();
   const { data: organization } = authClient.useActiveOrganization();
   useAutoActiveOrganization();
+  useCloseSidebarOnOutsideClick();
 
   const { data: dbCategories } = useQuery({
     queryKey: ["categories", organization?.id],

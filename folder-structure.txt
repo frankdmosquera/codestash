@@ -1,0 +1,141 @@
+codestash/
+├── .env.local
+├── drizzle.config.ts
+├── proxy.ts                           # fast cookie-presence redirect (renamed from middleware.ts in Next 16)
+├── package.json
+├── tsconfig.json
+│
+├── app/
+│   ├── layout.tsx                    # bare: fonts + QueryProvider only, no chrome
+│   ├── globals.css
+│   ├── api/
+│   │   └── auth/
+│   │       └── [...all]/
+│   │           └── route.ts          # Better Auth catch-all handler (the one real API route)
+│   ├── (auth)/                       # no nav — just the form, centered
+│   │   ├── layout.tsx
+│   │   ├── sign-in/
+│   │   │   ├── page.tsx
+│   │   │   └── otp/
+│   │   │       └── page.tsx          # "just email" sign-in (6-digit code)
+│   │   └── sign-up/
+│   │       └── page.tsx
+│   └── (main)/                       # everything else, wrapped in the sidebar shell
+│       ├── layout.tsx
+│       ├── page.tsx
+│       ├── onboarding/
+│       │   └── page.tsx              # protected: server-verifies session, redirects if none
+│       ├── workspace/
+│       │   └── members/
+│       │       └── page.tsx          # protected: invite form + members + pending invitations
+│       ├── invite/
+│       │   └── accept/
+│       │       └── page.tsx          # NOT proxy-protected — shows "sign in to accept" itself
+│       └── [category]/
+│           ├── page.tsx
+│           └── [subpage]/
+│               └── page.tsx
+│
+├── components/
+│   ├── auth/
+│   │   ├── sign-in-form.tsx          # email+password, Controller + Field pattern
+│   │   ├── sign-up-form.tsx
+│   │   └── email-otp-form.tsx        # two-step: request code → verify code
+│   ├── workspace/
+│   │   ├── create-workspace-form.tsx # name → slug derived via lib/utils.ts slugify()
+│   │   ├── invite-member-form.tsx    # email + role (admin/member — never owner)
+│   │   ├── workspace-members.tsx     # useActiveOrganization(): members + pending invites
+│   │   └── accept-invitation.tsx     # signed-out / wrong-email / accept-or-decline states
+│   ├── sidebar/                       # replaced the old navbar/ (header) entirely
+│   │   ├── app-sidebar.tsx           # "use client" — DB categories (sortable) if the active org has
+│   │   │                              # any seeded, else the static list (signed out / unseeded org)
+│   │   ├── sortable-category-list.tsx # dnd-kit: drag handle, optimistic reorder, persists via
+│   │   │                              # reorderCategoryAction (fractional-indexing rank)
+│   │   ├── workspace-nav-item.tsx    # Create workspace, or org name expanded to Members (defaultOpen)
+│   │   ├── category-nav-item.tsx     # icon/label/href/staticKey/dragHandle props — works for both
+│   │   │                              # static and DB-sourced categories; expandable subpages, A-Z/
+│   │   │                              # Newest sort, scrollable, "Nothing here yet" if no staticKey
+│   │   ├── site-header.tsx           # black header: trigger + logo + search + auth, inside SidebarInset
+│   │   ├── sidebar-search.tsx        # always-visible inline Command (no dialog wrapper)
+│   │   └── sidebar-user.tsx          # sign-in/up buttons, or avatar+dropdown (email + sign-out only —
+│   │                                  # workspace nav lives in the sidebar, not duplicated here)
+│   ├── manuals/
+│   │   ├── manual-accordion.tsx      # recursive tree renderer (1.1, 1.1.1, ...)
+│   │   └── manual-page.tsx
+│   ├── blocks/
+│   │   └── stacking-cards/
+│   │       ├── stacking-cards.tsx
+│   │       ├── StackingCardComponent.tsx
+│   │       └── cardsData.ts
+│   ├── providers/
+│   │   └── query-provider.tsx        # React Query provider
+│   ├── ui/                           # shadcn primitives (~50 files: button, dialog, accordion, field, sidebar, etc.)
+│   ├── category-card.tsx
+│   ├── code-block.tsx
+│   ├── snippet-page.tsx
+│   └── *-background.tsx              # decorative backgrounds per category
+│
+├── lib/
+│   ├── auth.ts                       # Better Auth server config (admin + organization + emailOTP plugins)
+│   ├── auth-client.ts                # Better Auth React client
+│   ├── utils.ts                       # cn() + slugify()
+│   ├── icon-map.ts                   # icon name (string) → LucideIcon — small curated set for now;
+│   │                                  # full icon-picker step needs a different (lazy) resolution strategy
+│   ├── actions/
+│   │   └── category-actions.ts       # "use server" — getCategoriesForActiveOrg, reorderCategoryAction
+│   │                                  # (verifies org ownership before writing — see its comment)
+│   ├── hooks/
+│   │   └── use-auto-active-organization.ts # Better Auth has no fallback for an unset
+│   │                                  # session.activeOrganizationId — this auto-selects when a
+│   │                                  # signed-in user belongs to exactly one workspace
+│   ├── validations/
+│   │   ├── auth-validation.ts        # Zod schemas for the auth forms — signInValidationSchema, etc.
+│   │   └── workspace-validation.ts   # createWorkspaceValidationSchema, inviteMemberValidationSchema
+│   ├── constants/
+│   │   └── categories.ts             # still the fallback source (signed out / unseeded workspace)
+│   ├── db/
+│   │   ├── index.ts                  # Drizzle client (Neon HTTP driver)
+│   │   └── schema/
+│   │       ├── auth-schema/          # generated (don't hand-edit lightly): one file per table
+│   │       │   ├── user-schema.ts
+│   │       │   ├── session-schema.ts
+│   │       │   ├── account-schema.ts # has a hand-patched `issuer` field — see its comment
+│   │       │   ├── verification-schema.ts
+│   │       │   ├── organization-schema.ts
+│   │       │   ├── member-schema.ts
+│   │       │   ├── invitation-schema.ts
+│   │       │   ├── relations.ts
+│   │       │   └── index.ts
+│   │       └── app-schema/           # ours: category, manual, section, memberEditQuota
+│   │           ├── category-schema.ts # org-scoped, dynamic, drag-and-drop rank — sidebar now reads
+│   │           │                      # from here for any org that has categories seeded into it
+│   │           ├── manual-schema.ts  # has categoryId now
+│   │           ├── section-schema.ts
+│   │           ├── member-edit-quota-schema.ts
+│   │           ├── relations.ts
+│   │           └── index.ts
+│   ├── data/                         # static content for the catalog (pre-DB)
+│   │   ├── types.ts                  # ManualSection, ContentBlock, Manual, Snippet
+│   │   ├── manuals/
+│   │   │   ├── mastering-git.ts
+│   │   │   ├── understanding-rsc.ts
+│   │   │   ├── debugging-nextjs.ts
+│   │   │   ├── cicd-basics.ts
+│   │   │   ├── docker-for-frontend-devs.ts
+│   │   │   └── index.ts
+│   │   ├── blocks/                   # (cta-banner, faq-accordion, hero-with-video, ...)
+│   │   ├── ai-instructions/          # (claude-md-starter, commit-message-prompt, ...)
+│   │   ├── helpers/                  # (slugify, debounce, group-by, ...)
+│   │   ├── hooks/                    # (use-debounce, use-local-storage, ...)
+│   │   └── index.ts
+│   └── helpers/
+│       ├── flatten-text.ts
+│       ├── get-top-items.ts
+│       └── parse-inline.tsx
+│
+├── hooks/
+│   └── use-mobile.ts
+├── customHooks/
+│   └── useScrollDirection.ts
+│
+└── public/

@@ -21,7 +21,7 @@ export function CategoryCard({ categoryKey }: CategoryCardProps) {
   const items = getTopItems(getItemsByCategory(categoryKey), 4);
 
   return (
-    <Card className="flex h-56 flex-col justify-between bg-neutral-900 p-6">
+    <Card className="flex h-full flex-col justify-between bg-neutral-900 p-6">
       <div>
         <div className="flex items-center gap-2">
           <Icon className="size-5 text-teal-400" strokeWidth={1.75} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -46,6 +46,8 @@ export function CategoryNavItem({
 }: CategoryNavItemProps) {
   const [open, setOpen] = useState(false);
   const [sort, setSort] = useState<SortMode>("alpha");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollDown, setCanScrollDown] = useState(false);
 
   // Only computed once the panel is actually opened — no reason to sort
   // every category's items on every sidebar render.
@@ -58,6 +60,19 @@ export function CategoryNavItem({
       return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
     });
   }, [open, sort, staticKey]);
+
+  // Drives the bottom fade below — without it, a truncated list looks
+  // identical to a complete one since the native scrollbar is invisible
+  // until the user hovers/drags it.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const update = () =>
+      setCanScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 1);
+    update();
+    el.addEventListener("scroll", update);
+    return () => el.removeEventListener("scroll", update);
+  }, [items]);
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -106,21 +121,29 @@ export function CategoryNavItem({
                 Newest
               </button>
             </li>
-            <div className="max-h-64 overflow-y-auto">
-              {items.map((item) => (
-                <SidebarMenuSubItem key={item.id}>
-                  <SidebarMenuSubButton
-                    render={<Link href={item.href} />}
-                    className="text-neutral-300 hover:bg-neutral-800 hover:text-white"
-                  >
-                    <span className="truncate">{item.title}</span>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              ))}
-              {items.length === 0 && (
-                <p className="px-2 py-1 text-xs text-neutral-600">
-                  Nothing here yet.
-                </p>
+            <div className="relative">
+              <div
+                ref={scrollRef}
+                className="max-h-64 scrollbar-thin overflow-y-auto overscroll-contain [scrollbar-color:var(--color-neutral-700)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-700 [&::-webkit-scrollbar-track]:bg-transparent"
+              >
+                {items.map((item) => (
+                  <SidebarMenuSubItem key={item.id}>
+                    <SidebarMenuSubButton
+                      render={<Link href={item.href} />}
+                      className="text-neutral-300 hover:bg-neutral-800 hover:text-white"
+                    >
+                      <span className="truncate">{item.title}</span>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                ))}
+                {items.length === 0 && (
+                  <p className="px-2 py-1 text-xs text-neutral-600">
+                    Nothing here yet.
+                  </p>
+                )}
+              </div>
+              {canScrollDown && (
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-linear-to-t from-neutral-950 to-transparent" />
               )}
             </div>
             <SidebarMenuSubItem>

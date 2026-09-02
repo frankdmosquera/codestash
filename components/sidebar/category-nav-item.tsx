@@ -160,7 +160,7 @@ export function CategoryNavItem({
           </CollapsibleTrigger>
         </div>
         <CollapsibleContent>
-          <SidebarMenuSub className="border-neutral-800">
+          <SidebarMenuSub className="rounded-md border-neutral-800 bg-neutral-900 py-1.5">
             <li className="flex items-center gap-1 px-1 pb-1 text-xs text-neutral-500">
               <button
                 type="button"
@@ -205,7 +205,7 @@ export function CategoryNavItem({
                 )}
               </div>
               {canScrollDown && (
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-linear-to-t from-neutral-950 to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-linear-to-t from-neutral-900 to-transparent" />
               )}
             </div>
             <SidebarMenuSubItem>

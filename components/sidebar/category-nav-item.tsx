@@ -23,6 +23,7 @@ import { getItemsByCategory, type CatalogCategoryKey } from "@/lib/data";
 import { getManualsForCategory } from "@/lib/actions/manual-actions";
 
 type SortMode = "alpha" | "recent";
+type SortDirection = "asc" | "desc";
 type SubItem = { id: string; title: string; href: string; createdAt?: string };
 
 export type CategoryNavItemProps = {
@@ -55,6 +56,7 @@ export function CategoryNavItem({
 }: CategoryNavItemProps) {
   const [open, setOpen] = useState(false);
   const [sort, setSort] = useState<SortMode>("alpha");
+  const [direction, setDirection] = useState<SortDirection>("asc");
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollDown, setCanScrollDown] = useState(false);
 
@@ -98,11 +100,24 @@ export function CategoryNavItem({
     }
 
     return [...raw].sort((a, b) => {
-      if (sort === "alpha") return a.title.localeCompare(b.title);
-      // "recent" = newest createdAt first; items missing one sort last.
-      return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
+      const cmp =
+        sort === "alpha"
+          ? a.title.localeCompare(b.title)
+          : (a.createdAt ?? "").localeCompare(b.createdAt ?? "");
+      return direction === "asc" ? cmp : -cmp;
     });
-  }, [open, sort, dbCategoryId, dbLoading, dbManuals, staticItems, href]);
+  }, [open, sort, direction, dbCategoryId, dbLoading, dbManuals, staticItems, href]);
+
+  // Clicking the already-active sort flips its direction; switching to the
+  // other sort resets to that sort's natural default (A-Z, newest-first).
+  function handleSortClick(mode: SortMode) {
+    if (sort === mode) {
+      setDirection((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSort(mode);
+      setDirection(mode === "alpha" ? "asc" : "desc");
+    }
+  }
 
   // Drives the bottom fade below — without it, a truncated list looks
   // identical to a complete one since the native scrollbar is invisible
@@ -145,23 +160,23 @@ export function CategoryNavItem({
             <li className="flex items-center gap-1 px-1 pb-1 text-xs text-neutral-500">
               <button
                 type="button"
-                onClick={() => setSort("alpha")}
+                onClick={() => handleSortClick("alpha")}
                 className={cn(
                   "rounded px-1.5 py-0.5 hover:text-neutral-200",
                   sort === "alpha" && "bg-neutral-800 text-neutral-200",
                 )}
               >
-                A–Z
+                {sort === "alpha" && direction === "desc" ? "Z–A" : "A–Z"}
               </button>
               <button
                 type="button"
-                onClick={() => setSort("recent")}
+                onClick={() => handleSortClick("recent")}
                 className={cn(
                   "rounded px-1.5 py-0.5 hover:text-neutral-200",
                   sort === "recent" && "bg-neutral-800 text-neutral-200",
                 )}
               >
-                Newest
+                {sort === "recent" && direction === "asc" ? "Oldest" : "Newest"}
               </button>
             </li>
             <div className="relative">

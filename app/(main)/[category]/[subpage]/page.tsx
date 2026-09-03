@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { getCategoryBySlug } from "@/lib/constants/categories";
 import { getManual, getSnippet } from "@/lib/data";
-import { getManualBySlug } from "@/lib/actions/manual-actions";
+import { getManualBySlug, getDbCategoryBySlug } from "@/lib/actions/manual-actions";
 import { ManualPage } from "@/components/manuals/manual-page";
 import { SnippetPage } from "@/components/snippet-page";
 import type { Manual, Snippet } from "@/lib/data/types";
@@ -31,7 +31,12 @@ export async function generateMetadata({
 }: PageProps<"/[category]/[subpage]">): Promise<Metadata> {
   const { category: categorySlug, subpage } = await params;
   const category = getCategoryBySlug(categorySlug);
-  if (!category) return { title: "Codestash" };
+
+  if (!category) {
+    // No static counterpart — a genuinely custom, DB-only category.
+    const dbManual = await getManualBySlug(categorySlug, subpage);
+    return { title: dbManual?.title ?? "Codestash" };
+  }
 
   const dbManual = await getManualBySlug(categorySlug, subpage);
   if (dbManual) return { title: dbManual.title };
@@ -48,7 +53,19 @@ export default async function SubpagePage({
 }: PageProps<"/[category]/[subpage]">) {
   const { category: categorySlug, subpage } = await params;
   const category = getCategoryBySlug(categorySlug);
-  if (!category) notFound();
+
+  if (!category) {
+    // No static counterpart — a genuinely custom, DB-only category (e.g.
+    // one seeded outside the 5 built-in ones). Everything in a category
+    // like this is a manual, never a snippet — the snippet-shaped
+    // degenerate case only applies to the 4 known static non-manuals
+    // keys (hooks/helpers/blocks/aiInstructions), which this isn't one of.
+    const dbCategoryRow = await getDbCategoryBySlug(categorySlug);
+    if (!dbCategoryRow) notFound();
+    const dbManual = await getManualBySlug(categorySlug, subpage);
+    if (dbManual) return <ManualPage manual={dbManual} />;
+    notFound();
+  }
 
   // DB-backed content first — same "DB overrides static" priority as the
   // sidebar and category page, so a workspace's own manual at this slug

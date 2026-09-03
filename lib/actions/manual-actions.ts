@@ -38,9 +38,11 @@ export async function getManualsForCategory(categoryId: string): Promise<DbManua
     .orderBy(asc(manual.title));
 }
 
-// Shared by getManualBySlug and getResolvedItemsForCategory — both need to
-// turn a URL category slug into the caller's DB category row for that org.
-async function getDbCategoryBySlug(categorySlug: string) {
+// Shared by getManualBySlug, getResolvedItemsForCategory, and the
+// [category]/[subpage] routes (for a genuinely custom, DB-only category
+// with no static counterpart) — turns a URL category slug into the
+// caller's DB category row for that org.
+export async function getDbCategoryBySlug(categorySlug: string) {
   const session = await auth.api.getSession({ headers: await headers() });
   const organizationId = session?.session.activeOrganizationId;
   if (!organizationId) return undefined;

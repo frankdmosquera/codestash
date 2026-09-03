@@ -18,9 +18,12 @@ work starts until production is honest again.
 
 ## Checklist
 
-- [ ] Pull the real Vercel runtime log for a failing `/api/auth/get-session` request
-- [ ] Identify the actual cause (bad `DATABASE_URL` value, missing `BETTER_AUTH_SECRET`, or something else)
-- [ ] Fix it and confirm `/` and every `/api/auth/*` route returns 200 in production
+- [x] Pull the real Vercel runtime log for a failing `/api/auth/get-session` request
+- [x] Identify the actual cause — `NEXT_PUBLIC_APP_URL` was set to `codestash-ten.vercel.app`
+      with no `https://` scheme, so better-auth's `new URL(baseURL)` threw
+      `BetterAuthError: Invalid base URL` on every request that touches `lib/auth.ts`
+- [x] Fix it and confirm `/` and every `/api/auth/*` route returns 200 in production —
+      fixed 2026-09-03 by correcting the Production env var value and redeploying
 - [ ] Add `.github/workflows/ci.yml` running `npm run lint`, `tsc --noEmit`, `npm run build`
 - [ ] Commit `.env.example` (already written, was sitting uncommitted as of this doc)
 

@@ -1,22 +1,18 @@
-"use client";
-
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
-import { authClient } from "@/lib/auth-client";
+import { getActiveOrganizationDetails } from "@/lib/actions/workspace-actions";
 import { InviteMemberForm } from "./invite-member-form";
 
-export function WorkspaceMembers() {
-  const { data: organization, isPending } = authClient.useActiveOrganization();
-
-  if (isPending) {
-    return <p className="text-sm text-muted-foreground">Loading...</p>;
-  }
+// Server Component — the member/invitation lists are static once fetched;
+// only InviteMemberForm itself needs to be client.
+export async function WorkspaceMembers() {
+  const organization = await getActiveOrganizationDetails();
 
   if (!organization) {
     return (
       <p className="text-sm text-muted-foreground">
-        You don't have a workspace yet.{" "}
+        You don&apos;t have a workspace yet.{" "}
         <Link href="/onboarding" className="text-primary underline underline-offset-4">
           Create one
         </Link>

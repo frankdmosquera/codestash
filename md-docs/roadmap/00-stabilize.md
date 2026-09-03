@@ -24,8 +24,10 @@ work starts until production is honest again.
       `BetterAuthError: Invalid base URL` on every request that touches `lib/auth.ts`
 - [x] Fix it and confirm `/` and every `/api/auth/*` route returns 200 in production —
       fixed 2026-09-03 by correcting the Production env var value and redeploying
-- [ ] Add `.github/workflows/ci.yml` running `npm run lint`, `tsc --noEmit`, `npm run build`
-- [ ] Commit `.env.example` (already written, was sitting uncommitted as of this doc)
+- [x] Add `.github/workflows/ci.yml` running `npm run lint`, `tsc --noEmit`, `npm run build`
+      on every push to any branch — requires `DATABASE_URL`, `BETTER_AUTH_SECRET`, and
+      `NEXT_PUBLIC_APP_URL` set as GitHub Actions repo secrets or the build step fails
+- [x] Commit `.env.example` (already written, was sitting uncommitted as of this doc)
 
 ## Deferred, on purpose
 

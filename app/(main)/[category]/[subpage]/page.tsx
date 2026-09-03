@@ -6,6 +6,25 @@ import { getManual, getSnippet } from "@/lib/data";
 import { getManualBySlug } from "@/lib/actions/manual-actions";
 import { ManualPage } from "@/components/manuals/manual-page";
 import { SnippetPage } from "@/components/snippet-page";
+import type { Manual, Snippet } from "@/lib/data/types";
+
+// A DB snippet is stored as a manual with exactly one section and a single
+// "code" block (see scripts/merge-snippet-into-manual.ts) — same table as
+// manuals, just the degenerate one-node case. This reshapes it back into
+// the flat `Snippet` shape SnippetPage expects, so non-manual categories
+// keep rendering as "title + code", not an accordion with one item.
+function toSnippet(dbManual: Manual): Snippet | undefined {
+  const blocks = dbManual.sections[0]?.blocks;
+  const code = blocks?.find((b) => b.type === "code")?.code;
+  if (code === undefined) return undefined;
+  return {
+    slug: dbManual.slug,
+    title: dbManual.title,
+    description: dbManual.subtitle || undefined,
+    code,
+    createdAt: dbManual.createdAt,
+  };
+}
 
 export async function generateMetadata({
   params,
@@ -37,7 +56,11 @@ export default async function SubpagePage({
   // static catalog entry sharing that slug. Static is the fallback for
   // slugs the DB doesn't have anything for.
   const dbManual = await getManualBySlug(categorySlug, subpage);
-  if (dbManual) return <ManualPage manual={dbManual} />;
+  if (dbManual) {
+    if (category.key === "manuals") return <ManualPage manual={dbManual} />;
+    const dbSnippet = toSnippet(dbManual);
+    if (dbSnippet) return <SnippetPage snippet={dbSnippet} />;
+  }
 
   if (category.key === "manuals") {
     const staticManual = getManual(subpage);

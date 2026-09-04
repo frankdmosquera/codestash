@@ -177,7 +177,10 @@ codestash/
 │   │                                  # whenever STORY.md/SETUP.md/ROLES-AND-BILLING-PLAN.md change
 │   ├── seed-roadmap-manual.ts        # one-time: first seed of ROADMAP.md as the "Roadmap to Success"
 │   │                                  # in-app manual — no-ops if it already exists
-│   └── update-roadmap-manual.ts      # re-runnable: replaces that manual's section tree — re-run
-│                                      # this one whenever md-docs/ROADMAP.md or roadmap/*.md change
+│   ├── update-roadmap-manual.ts      # re-runnable: replaces that manual's section tree — re-run
+│   │                                  # this one whenever md-docs/ROADMAP.md or roadmap/*.md change
+│   └── add-cicd-case-study-section.ts # one-time: adds a real-world case-study section (this
+│                                      # project's own ci.yml) to the existing DB-only "cicd-basics"
+│                                      # manual's "A Real GitHub Actions Workflow" section
 │
 └── public/

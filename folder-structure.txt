@@ -171,8 +171,10 @@ codestash/
 │   ├── seed-codestash-category.ts    # one-time: seeded the 5 built-in categories for the real org
 │   ├── seed-codestash-owner-membership.ts # one-time fix: added the owner's missing `member` row
 │   │                                  # (a raw DB insert had skipped it — broke sidebar drag-and-drop)
-│   ├── seed-doc-family-manuals.ts    # one-time: STORY.md/SETUP.md/ROLES-AND-BILLING-PLAN.md → the
-│   │                                  # "codestash" category's in-app manuals
+│   ├── seed-doc-family-manuals.ts    # one-time: first seed of STORY.md/SETUP.md/ROLES-AND-BILLING-PLAN.md
+│   │                                  # as the "codestash" category's in-app manuals — no-ops if they exist
+│   ├── update-doc-family-manuals.ts  # re-runnable: replaces those 3 manuals' section trees — re-run
+│   │                                  # whenever STORY.md/SETUP.md/ROLES-AND-BILLING-PLAN.md change
 │   ├── seed-roadmap-manual.ts        # one-time: first seed of ROADMAP.md as the "Roadmap to Success"
 │   │                                  # in-app manual — no-ops if it already exists
 │   └── update-roadmap-manual.ts      # re-runnable: replaces that manual's section tree — re-run

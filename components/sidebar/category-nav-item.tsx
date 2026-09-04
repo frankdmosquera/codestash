@@ -19,7 +19,6 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import { getItemsByCategory, type CatalogCategoryKey } from "@/lib/data";
 import { getManualsForCategory } from "@/lib/actions/manual-actions";
 import { useCategoryOpen } from "./category-open-context";
 
@@ -31,19 +30,12 @@ export type CategoryNavItemProps = {
   icon: LucideIcon;
   label: string;
   href: string;
-  // Only set for the fixed set of categories that have static subpage data
-  // today (see lib/data). Falls back to the empty state when neither this
-  // nor `dbCategoryId` resolves any items.
-  staticKey?: CatalogCategoryKey;
-  // Set for a DB-backed category row — when present, subitems are fetched
-  // from the `manual` table scoped to this category, falling back to the
-  // static catalog (if `staticKey` matches) only once that query resolves
-  // with zero rows.
-  dbCategoryId?: string;
+  // Subitems are fetched from the `manual` table scoped to this category.
+  dbCategoryId: string;
   // Rendered as a sibling of the trigger button, not nested inside it —
   // interactive drag handles can't live inside another interactive
   // element. Passed in by a sortable wrapper; omitted entirely when this
-  // category isn't in a reorderable (DB-backed) list.
+  // category isn't in a reorderable (own-workspace) list.
   dragHandle?: ReactNode;
 };
 
@@ -51,7 +43,6 @@ export function CategoryNavItem({
   icon: Icon,
   label,
   href,
-  staticKey,
   dbCategoryId,
   dragHandle,
 }: CategoryNavItemProps) {
@@ -63,42 +54,21 @@ export function CategoryNavItem({
 
   const { data: dbManuals, isLoading: dbLoading } = useQuery({
     queryKey: ["manuals", dbCategoryId],
-    queryFn: () => getManualsForCategory(dbCategoryId!),
-    enabled: open && !!dbCategoryId,
+    queryFn: () => getManualsForCategory(dbCategoryId),
+    enabled: open,
   });
-
-  const staticItems: SubItem[] = useMemo(() => {
-    if (!staticKey) return [];
-    return getItemsByCategory(staticKey).map((item) => ({
-      id: item.id,
-      title: item.title,
-      href: item.href,
-      createdAt: item.createdAt,
-    }));
-  }, [staticKey]);
 
   // Only computed once the panel is actually opened — no reason to sort
   // every category's items on every sidebar render.
   const items = useMemo(() => {
-    if (!open) return [];
+    if (!open || dbLoading) return [];
 
-    let raw: SubItem[];
-    if (dbCategoryId) {
-      // Wait for the DB query rather than flashing static content first —
-      // avoids a fallback-then-swap flicker on open.
-      if (dbLoading) return [];
-      raw =
-        dbManuals && dbManuals.length > 0
-          ? dbManuals.map((m) => ({
-              id: m.id,
-              title: m.title,
-              href: `${href}/${m.slug}`,
-              createdAt: new Date(m.createdAt).toISOString(),
-            }))
-          : staticItems;
-    } else {
-      raw = staticItems;
-    }
+    const raw: SubItem[] = (dbManuals ?? []).map((m) => ({
+      id: m.id,
+      title: m.title,
+      href: `${href}/${m.slug}`,
+      createdAt: new Date(m.createdAt).toISOString(),
+    }));
 
     return [...raw].sort((a, b) => {
       const cmp =
@@ -107,7 +77,7 @@ export function CategoryNavItem({
           : (a.createdAt ?? "").localeCompare(b.createdAt ?? "");
       return direction === "asc" ? cmp : -cmp;
     });
-  }, [open, sort, direction, dbCategoryId, dbLoading, dbManuals, staticItems, href]);
+  }, [open, sort, direction, dbLoading, dbManuals, href]);
 
   // Clicking the already-active sort flips its direction; switching to the
   // other sort resets to that sort's natural default (A-Z, newest-first).

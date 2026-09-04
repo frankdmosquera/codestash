@@ -7,8 +7,8 @@ import { and, asc, eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { category, manual } from "@/lib/db/schema/app-schema";
-import { getItemsByCategory } from "@/lib/data";
-import type { CatalogCategoryKey, ContentBlock, Manual, ManualSection } from "@/lib/data/types";
+import { getPublicOrganizationId } from "@/lib/actions/public-organization";
+import type { ContentBlock, Manual, ManualSection } from "@/lib/data/types";
 
 export type DbManualRow = {
   id: string;
@@ -19,10 +19,12 @@ export type DbManualRow = {
 };
 
 // Sidebar subitems for a DB-backed category — scoped to the caller's active
-// org so one workspace never sees another's manuals.
+// org so one workspace never sees another's manuals, falling back to the
+// public catalog org for a signed-out visitor (or a signed-in user with no
+// active workspace) so the catalog itself is never gated behind a session.
 export async function getManualsForCategory(categoryId: string): Promise<DbManualRow[]> {
   const session = await auth.api.getSession({ headers: await headers() });
-  const organizationId = session?.session.activeOrganizationId;
+  const organizationId = session?.session.activeOrganizationId ?? (await getPublicOrganizationId());
   if (!organizationId) return [];
 
   return db
@@ -39,12 +41,13 @@ export async function getManualsForCategory(categoryId: string): Promise<DbManua
 }
 
 // Shared by getManualBySlug, getResolvedItemsForCategory, and the
-// [category]/[subpage] routes (for a genuinely custom, DB-only category
-// with no static counterpart) — turns a URL category slug into the
-// caller's DB category row for that org.
+// [category]/[subpage] routes — turns a URL category slug into a DB
+// category row, scoped to the caller's active org when signed in, else
+// falling back to the public catalog org. The catalog is public content;
+// it shouldn't require a session to read.
 export async function getDbCategoryBySlug(categorySlug: string) {
   const session = await auth.api.getSession({ headers: await headers() });
-  const organizationId = session?.session.activeOrganizationId;
+  const organizationId = session?.session.activeOrganizationId ?? (await getPublicOrganizationId());
   if (!organizationId) return undefined;
 
   return db.query.category.findFirst({
@@ -120,6 +123,44 @@ export const getManualBySlug = cache(
   },
 );
 
+export type SearchableItem = {
+  id: string;
+  title: string;
+  href: string;
+  categoryLabel: string;
+};
+
+// Sidebar search — flat list across every category for the caller's org
+// (own active org when signed in, else the public catalog org), grouped
+// client-side by categoryLabel. Same org-resolution as everything else
+// here: the catalog is public content, not gated behind a session.
+export async function getSearchableCatalogItems(): Promise<SearchableItem[]> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  const organizationId = session?.session.activeOrganizationId ?? (await getPublicOrganizationId());
+  if (!organizationId) return [];
+
+  const rows = await db
+    .select({
+      id: manual.id,
+      slug: manual.slug,
+      title: manual.title,
+      categorySlug: category.slug,
+      categoryLabel: category.label,
+      categoryRank: category.rank,
+    })
+    .from(manual)
+    .innerJoin(category, eq(manual.categoryId, category.id))
+    .where(eq(manual.organizationId, organizationId))
+    .orderBy(asc(category.rank), asc(manual.title));
+
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    href: `/${r.categorySlug}/${r.slug}`,
+    categoryLabel: r.categoryLabel,
+  }));
+}
+
 export type ResolvedCatalogItem = {
   id: string;
   title: string;
@@ -128,28 +169,22 @@ export type ResolvedCatalogItem = {
   createdAt?: string;
 };
 
-// The category page ([category]/page.tsx) and homepage cards both need the
-// same "DB manuals if this workspace has any, else the static catalog"
-// fallback the sidebar already uses — otherwise they show a different list
-// than what's actually clickable in the sidebar for a DB-backed category.
+// The category page ([category]/page.tsx) item grid — same DB source the
+// sidebar subitems use, so the grid never shows a different list than
+// what's actually clickable in the sidebar for the same category.
 export async function getResolvedItemsForCategory(
   categorySlug: string,
-  staticKey: CatalogCategoryKey | undefined,
   categoryHref: string,
 ): Promise<ResolvedCatalogItem[]> {
   const categoryRow = await getDbCategoryBySlug(categorySlug);
-  if (categoryRow) {
-    const dbManuals = await getManualsForCategory(categoryRow.id);
-    if (dbManuals.length > 0) {
-      return dbManuals.map((m) => ({
-        id: m.id,
-        title: m.title,
-        href: `${categoryHref}/${m.slug}`,
-        description: m.subtitle ?? undefined,
-        createdAt: m.createdAt.toISOString(),
-      }));
-    }
-  }
+  if (!categoryRow) return [];
 
-  return staticKey ? getItemsByCategory(staticKey) : [];
+  const dbManuals = await getManualsForCategory(categoryRow.id);
+  return dbManuals.map((m) => ({
+    id: m.id,
+    title: m.title,
+    href: `${categoryHref}/${m.slug}`,
+    description: m.subtitle ?? undefined,
+    createdAt: m.createdAt.toISOString(),
+  }));
 }

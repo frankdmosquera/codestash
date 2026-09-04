@@ -21,7 +21,6 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 import { SidebarMenu } from "@/components/ui/sidebar";
-import { getCategoryBySlug } from "@/lib/constants/categories";
 import { resolveIcon } from "@/lib/icon-map";
 import { reorderCategoryAction, type DbCategoryRow } from "@/lib/actions/category-actions";
 import { CategoryNavItem } from "./category-nav-item";
@@ -50,7 +49,6 @@ function SortableItem({ row }: { row: DbCategoryRow }) {
         icon={resolveIcon(row.icon)}
         label={row.label}
         href={`/${row.slug}`}
-        staticKey={getCategoryBySlug(row.slug)?.key}
         dbCategoryId={row.id}
         dragHandle={
           <button

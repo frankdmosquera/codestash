@@ -178,64 +178,80 @@ exactly match the invitation's email, or it returns 403
 
 ## Where things stand
 
-Static catalog: fully working, no DB needed. DB/auth: schema is pushed to
-Neon; sign-up and sign-in (password and email-code) are working end-to-end
-against the real database, and so is the full workspace flow — creating
-your first workspace (`/onboarding`, you become `owner`), inviting people
-(`/workspace/members`, as `admin` or `member`), and accepting an invite
-(`/invite/accept?id=...`). Social login (Google, etc.) is intentionally
-parked until there's a step dedicated to going and getting each provider's
-credentials. Note: being flagged as the platform `superadmin` (not
-workspace `owner` — a separate, app-wide role) is still a manual one-time
-step, not wired into any UI yet.
+DB/auth: schema is pushed to Neon; sign-up and sign-in (password and
+email-code) are working end-to-end against the real database, and so is
+the full workspace flow — creating your first workspace (`/onboarding`,
+you become `owner`), inviting people (`/workspace/members`, as `admin` or
+`member`), and accepting an invite (`/invite/accept?id=...`). Social login
+(Google, etc.) is intentionally parked until there's a step dedicated to
+going and getting each provider's credentials. Note: being flagged as the
+platform `superadmin` (not workspace `owner` — a separate, app-wide role)
+is still a manual one-time step, not wired into any UI yet.
 
-Categories are now genuinely dynamic and reorderable for any workspace
-that has some seeded into the `category` table — verified live: seeded 3
-test categories into a test workspace, dragged one to a new position with
-real mouse events, confirmed the new fractional rank persisted in Neon,
-and confirmed it survives a fresh page load (not just client state). The
-homepage and public category pages (`/`, `/[category]`) still read the
-static `lib/constants/categories.ts` unconditionally, though — only the
-signed-in sidebar is DB-aware so far. There's still no "create category"
-UI, so the only way a workspace gets DB categories today is a manual
-seed (see `lib/actions/category-actions.ts` for the shape). The real
-workspace ("Codestash", under `heguer76@gmail.com`) has been seeded this
-way with the 5 real categories — drag-and-drop is live and usable there
-right now, not just in test workspaces. Icon picker (any lucide-react
-icon, not just `lib/icon-map.ts`'s small curated set) and background theme
-presets are the next pieces once the DB read-path itself was proven out.
-Also added: `organization.plan` (defaults `"free"`) — groundwork for a
-future free-vs-paid category cap, not enforced anywhere yet, no billing
-wired up. See `md-docs/ROLES-AND-BILLING-PLAN.md` for the full design this
-is heading toward, and `md-docs/ROADMAP.md` for the build-out sequencing.
+**As of 2026-09-03, the catalog is 100% DB-backed — no static content or
+fallback remains anywhere.** `lib/data/` now holds only `types.ts` (shared
+TypeScript types); the `manuals/`, `hooks/`, `helpers/`, `blocks/`, and
+`ai-instructions/` folders that used to hold hardcoded content are
+deleted. This closes the gap the paragraphs below used to describe (kept
+here, updated, rather than deleted outright, since the "why" is still
+useful history):
 
-All static `lib/data/*` content is being retired, not just manuals — the
-goal is nothing static left (content, links, strings all DB-backed).
-Snippets (hooks/helpers/blocks/AI-instructions) no longer have their own
-table — there used to be a separate `snippet` table, but it's been
-retired in favor of storing a snippet as a `manual` row with exactly one
-section and a single `code` block (the degenerate one-node case of the
-same shape). `[category]/[subpage]/page.tsx`'s `toSnippet()` reshapes
-that DB row back into the flat `Snippet` shape `SnippetPage` expects, so
-non-manual categories still render as "title + code," not an accordion
-with one item. The public `/[category]` pages and sidebar subitems still
-resolve snippets from the static `lib/data/*` files, though — same gap
-the DB-backed `manual` table had until `getManualBySlug` was wired up in
-`lib/actions/manual-actions.ts`. Wiring an equivalent DB read path for
-non-manual categories is the next piece.
+- Every read path — subpages, category listing pages, the homepage's
+  category cards, sidebar categories, sidebar subitems, and sidebar
+  search — resolves through `lib/actions/manual-actions.ts` and
+  `lib/actions/category-actions.ts`, all DB-only now.
+- The real blocker wasn't missing data, it was that every one of those
+  reads required `session.activeOrganizationId` — so a signed-out visitor
+  (i.e. the actual public site) never saw DB content no matter what was
+  in it, and silently fell back to static files instead. Fixed by
+  `lib/actions/public-organization.ts`'s `getPublicOrganizationId()`: any
+  read with no active-org session now falls back to the one real
+  ("codestash"-slug) organization instead of returning nothing. Writes
+  (`reorderCategoryAction`, etc.) are untouched — still require a real
+  session, so a signed-out visitor gets a read-only sidebar (no drag
+  handle) even though the same DB rows power it.
+- Snippets (hooks/helpers/blocks/AI instructions) don't have their own
+  table — the old separate `snippet` table was retired in favor of
+  storing a snippet as a `manual` row with exactly one section and a
+  single `code` block (the degenerate one-node case of the same shape).
+  `[category]/[subpage]/page.tsx`'s `toSnippet()` reshapes that DB row
+  back into the flat `Snippet` shape `SnippetPage` expects. The physical
+  `snippet` table itself (leftover after the code stopped referencing it)
+  has since been dropped from Postgres too — nothing references it, code
+  or schema.
+- Categories are dynamic and reorderable for any workspace that has some
+  seeded into the `category` table — verified live: seeded 3 test
+  categories into a test workspace, dragged one to a new position with
+  real mouse events, confirmed the new fractional rank persisted in Neon
+  and survives a fresh page load. There's still no "create category" UI
+  — the only way a workspace gets DB categories today is a manual seed
+  (see `scripts/seed-codestash-category.ts`). The real workspace
+  ("Codestash", under `heguer76@gmail.com`) has all 6 of its categories
+  (the 5 built-in ones plus a custom `codestash` category holding this
+  project's own planning docs as in-app manuals) seeded this way — 29
+  manual rows total across them as of 2026-09-03. Icon picker (any
+  lucide-react icon, not just `lib/icon-map.ts`'s small curated set) and
+  background theme presets are still future work — every category besides
+  the 5 built-in ones renders with a plain default look, no custom
+  Background component, on purpose (see [[codestash_no_static_data_goal]]
+  in Claude's memory / the equivalent decision recorded in
+  `md-docs/ROADMAP.md`).
+- Also added: `organization.plan` (defaults `"free"`) — groundwork for a
+  future free-vs-paid category cap, not enforced anywhere yet, no billing
+  wired up. See `md-docs/ROLES-AND-BILLING-PLAN.md` for the full design
+  this is heading toward, and `md-docs/ROADMAP.md` for the build-out
+  sequencing.
 
-`lib/data/manuals/mastering-git.ts` (the one hand-authored manual) had
-picked up stray content at some point — an inserted "Git Basics Recap"
-section and a section literally titled "Format Test (fake data — nesting
-depth check)" appended after it, neither of which exist on `main` or the
-deployed site. Restored from `main` (2026-09-02) — verified against the
-live site's actual section list first, not assumed. Its DB row already
-existed correctly (10 real top-level sections, seeded in an earlier
-session) — `[category]/[subpage]/page.tsx` checks DB before static, so a
-signed-in Codestash user was already seeing the correct version; only
-signed-out visitors / other workspaces were getting the corrupted static
-fallback. If a static file's content ever looks off again, diff it against
-`main` and cross-check the live site before trusting either.
+`mastering-git` (the one hand-authored manual, formerly
+`lib/data/manuals/mastering-git.ts`, now DB-only) had picked up stray
+content at some point — an inserted "Git Basics Recap" section and a
+section literally titled "Format Test (fake data — nesting depth check)"
+appended after it, neither of which exist on `main` or the deployed site.
+Restored from `main` (2026-09-02), verified against the live site's
+actual section list first, not assumed, before the static file itself was
+deleted entirely in the migration above. If a manual's content ever looks
+off again, there's no static file left to diff against — check the DB row
+directly and cross-check the deployed site.
 
 For the up-to-date step-by-step plan and what's done vs. still open, read
 the "next16-neon-better-auth" manual in-app rather than this file — this

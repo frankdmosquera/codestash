@@ -5,18 +5,6 @@ export type CatalogCategoryKey =
   | "blocks"
   | "aiInstructions";
 
-// Normalized shape every category's items get mapped to — this is what
-// nav search, dropdowns, and category cards render from.
-export interface CatalogItem {
-  id: string;
-  category: CatalogCategoryKey;
-  title: string;
-  href: string;
-  description?: string;
-  badgeLabel?: string;
-  createdAt?: string; // ISO date string — omit if there's no recency signal yet
-}
-
 export type ContentBlock =
   | { type: "p"; text: string }
   | { type: "list"; items: string[] }

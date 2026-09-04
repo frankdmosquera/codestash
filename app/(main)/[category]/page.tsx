@@ -85,7 +85,7 @@ export default async function CategoryPage({
     const dbCategoryRow = await getDbCategoryBySlug(categorySlug);
     if (!dbCategoryRow) notFound();
 
-    const items = await getResolvedItemsForCategory(categorySlug, undefined, `/${categorySlug}`);
+    const items = await getResolvedItemsForCategory(categorySlug, `/${categorySlug}`);
 
     return (
       <div className="mx-auto max-w-5xl px-6 py-16">
@@ -103,7 +103,7 @@ export default async function CategoryPage({
     );
   }
 
-  const items = await getResolvedItemsForCategory(categorySlug, category.key, category.href);
+  const items = await getResolvedItemsForCategory(categorySlug, category.href);
   const Icon = category.icon;
 
   return (

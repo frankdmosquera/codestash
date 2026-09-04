@@ -7,7 +7,6 @@ import { and, asc, eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { category, manual } from "@/lib/db/schema/app-schema";
-import { getPublicOrganizationId } from "@/lib/actions/public-organization";
 import type { ContentBlock, Manual, ManualSection } from "@/lib/data/types";
 
 export type DbManualRow = {
@@ -19,12 +18,11 @@ export type DbManualRow = {
 };
 
 // Sidebar subitems for a DB-backed category — scoped to the caller's active
-// org so one workspace never sees another's manuals, falling back to the
-// public catalog org for a signed-out visitor (or a signed-in user with no
-// active workspace) so the catalog itself is never gated behind a session.
+// org so one workspace never sees another's manuals. Every route that
+// reaches this requires a session (see proxy.ts).
 export async function getManualsForCategory(categoryId: string): Promise<DbManualRow[]> {
   const session = await auth.api.getSession({ headers: await headers() });
-  const organizationId = session?.session.activeOrganizationId ?? (await getPublicOrganizationId());
+  const organizationId = session?.session.activeOrganizationId;
   if (!organizationId) return [];
 
   return db
@@ -42,12 +40,11 @@ export async function getManualsForCategory(categoryId: string): Promise<DbManua
 
 // Shared by getManualBySlug, getResolvedItemsForCategory, and the
 // [category]/[subpage] routes — turns a URL category slug into a DB
-// category row, scoped to the caller's active org when signed in, else
-// falling back to the public catalog org. The catalog is public content;
-// it shouldn't require a session to read.
+// category row, scoped to the caller's active org. Every route that
+// reaches this requires a session (see proxy.ts).
 export async function getDbCategoryBySlug(categorySlug: string) {
   const session = await auth.api.getSession({ headers: await headers() });
-  const organizationId = session?.session.activeOrganizationId ?? (await getPublicOrganizationId());
+  const organizationId = session?.session.activeOrganizationId;
   if (!organizationId) return undefined;
 
   return db.query.category.findFirst({
@@ -130,13 +127,12 @@ export type SearchableItem = {
   categoryLabel: string;
 };
 
-// Sidebar search — flat list across every category for the caller's org
-// (own active org when signed in, else the public catalog org), grouped
-// client-side by categoryLabel. Same org-resolution as everything else
-// here: the catalog is public content, not gated behind a session.
+// Sidebar search — flat list across every category for the caller's active
+// org, grouped client-side by categoryLabel. Every route that reaches this
+// requires a session (see proxy.ts).
 export async function getSearchableCatalogItems(): Promise<SearchableItem[]> {
   const session = await auth.api.getSession({ headers: await headers() });
-  const organizationId = session?.session.activeOrganizationId ?? (await getPublicOrganizationId());
+  const organizationId = session?.session.activeOrganizationId;
   if (!organizationId) return [];
 
   const rows = await db

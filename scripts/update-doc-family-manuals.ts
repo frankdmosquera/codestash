@@ -146,7 +146,7 @@ const docs: DocManual[] = [
                 items: [
                   "`app/(auth)/` — sign-in / sign-up / sign-in-with-code, no nav, just the form.",
                   "`app/(main)/` — everything else (home, category browsing, `/onboarding`, `/workspace/members`, `/invite/accept`), wrapped in a sidebar + header shell.",
-                  "`components/sidebar/app-sidebar.tsx`'s Browse group is DB-backed either way now: the caller's own active-org categories (reorderable, dnd-kit) when signed in with an active workspace, else a read-only list from the public catalog org (`getPublicCategories()`) — no static fallback left.",
+                  "`components/sidebar/app-sidebar.tsx`'s Browse group is DB-backed and always the caller's own active-org categories (reorderable, dnd-kit) — every route it renders on requires a session (see `proxy.ts`), so there's no signed-out/public branch left to handle.",
                   "A custom category (slug doesn't match one of the 5 built-in ones, e.g. `codestash`) renders its real manuals exactly like a built-in one — nothing placeholder about it.",
                   "Root `app/layout.tsx` stays bare (fonts + `QueryProvider` only) so each group controls its own chrome.",
                 ],
@@ -193,7 +193,7 @@ const docs: DocManual[] = [
           },
           {
             type: "p",
-            text: "**As of 2026-09-03, the catalog is 100% DB-backed — no static content or fallback remains anywhere.** `lib/data/` now holds only shared types; every read (subpages, category pages, homepage cards, sidebar, search) goes through the DB, falling back to the public catalog org (`getPublicOrganizationId()`) instead of a static file when there's no active-org session. That was the actual blocker behind \"why is this still static\" for a while — not missing data, but every read requiring a session to begin with.",
+            text: "**As of 2026-09-04, the catalog is 100% DB-backed and fully auth-gated — no static content and no public/signed-out access remain anywhere.** `lib/data/` now holds only shared types; every read (subpages, category pages, homepage cards, sidebar, search) goes through the DB. The homepage was the last holdout still rendering a hardcoded category list, fixed 2026-09-04. The old public-org fallback (`getPublicOrganizationId()`) that let signed-out visitors browse is gone — every route now requires a real session (`proxy.ts` + a per-page server-verified check), redirecting to `/sign-in` otherwise.",
           },
           {
             type: "p",
@@ -223,7 +223,7 @@ const docs: DocManual[] = [
           {
             type: "list",
             items: [
-              "The public catalog works with zero setup for the visitor — no login needed to browse (a database is still required to run the app itself, see the Setup manual).",
+              "**Reversed 2026-09-04:** the catalog is no longer public. Every route requires a real session (`proxy.ts` + a per-page server-verified check) — a signed-out visitor is redirected to `/sign-in` and sees nothing.",
               "Sign-up, sign-in, and the workspace flow already work end-to-end: creating a workspace makes you its `owner`, invite people as `admin` or `member`, they can accept.",
               'Exactly **one** real organization exists — "Codestash" — created by a direct database insert, not the normal signup flow. That bypass is what caused the earlier sidebar drag-and-drop bug.',
               'Categories can be dragged/reordered for a workspace with seeded categories — but there\'s still no "create category" UI.',

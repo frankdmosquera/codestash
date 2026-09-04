@@ -1,6 +1,8 @@
+import { headers } from "next/headers";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
+import { auth } from "@/lib/auth";
 import { getCategoryBySlug } from "@/lib/constants/categories";
 import { getManualBySlug } from "@/lib/actions/manual-actions";
 import { ManualPage } from "@/components/manuals/manual-page";
@@ -47,6 +49,11 @@ export async function generateMetadata({
 export default async function SubpagePage({
   params,
 }: PageProps<"/[category]/[subpage]">) {
+  // Source of truth for access control — proxy.ts only does a fast,
+  // cookie-presence redirect; this is the real, server-verified check.
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect("/sign-in");
+
   const { category: categorySlug, subpage } = await params;
   const category = getCategoryBySlug(categorySlug);
 

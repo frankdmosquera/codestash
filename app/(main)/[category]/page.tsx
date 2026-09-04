@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
+import { auth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -75,6 +77,11 @@ function ItemGrid({
 export default async function CategoryPage({
   params,
 }: PageProps<"/[category]">) {
+  // Source of truth for access control — proxy.ts only does a fast,
+  // cookie-presence redirect; this is the real, server-verified check.
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect("/sign-in");
+
   const { category: categorySlug } = await params;
   const category = getCategoryBySlug(categorySlug);
 

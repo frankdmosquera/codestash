@@ -41,7 +41,7 @@ this person allowed to do this" and "does this org's plan allow this."
 
 ## Checklist
 
-- [ ] Lock Plan B and Plan C's actual seat-pricing numbers (currently
+- [x] Lock Plan B and Plan C's actual seat-pricing numbers (currently
       TBD in `ROLES-AND-BILLING-PLAN.md`) — `plan-limits.ts` can't be
       called complete with placeholder values in it
 - [ ] Create `lib/config/plan-limits.ts` defining limits for plans A/B/C
@@ -49,9 +49,9 @@ this person allowed to do this" and "does this org's plan allow this."
 - [ ] Enforce the seat cap in the invite flow (block invite at limit, surface an upgrade prompt)
 - [ ] Build `requireOrgRole(session, allowedRoles)` helper
 - [ ] Retrofit `reorderCategoryAction` to call it (it currently has zero role check)
-- [ ] Override better-auth's org access control so `organization:delete` is not in the `owner` role's permission set
+- [x] Override better-auth's org access control so `organization:delete` is not in the `owner` role's permission set
 - [ ] Build `createCategoryAction` + a minimal "add category" form
-- [ ] Document the Organization Manager → `owner`/`admin`/`member` mapping directly in `ROLES-AND-BILLING-PLAN.md` once confirmed
+- [x] Document the Organization Manager → `owner`/`admin`/`member` mapping directly in `ROLES-AND-BILLING-PLAN.md` once confirmed
 - [ ] Confirm no seed script gets run again for any workspace other than as a documented historical fix
 
 ## Deferred, on purpose

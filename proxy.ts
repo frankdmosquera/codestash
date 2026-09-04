@@ -20,8 +20,14 @@ export default function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // /invite/accept is deliberately NOT here — it needs to render for
-  // signed-out visitors too, so it can show its own "sign in to accept"
-  // state instead of being redirected before the page ever loads.
-  matcher: ["/onboarding", "/workspace/:path*"],
+  // Everything requires a session now — the catalog is no longer public
+  // (see md-docs/ROLES-AND-BILLING-PLAN.md #5, reversed 2026-09-04).
+  // Excluded: the auth API itself (sign-in/sign-up need it reachable
+  // while signed out), the sign-in/sign-up pages, and /invite/accept,
+  // which deliberately renders for signed-out visitors too so it can show
+  // its own "sign in to accept" state instead of being redirected before
+  // the page ever loads.
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|sign-in|sign-up|invite/accept).*)",
+  ],
 };

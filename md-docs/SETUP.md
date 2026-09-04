@@ -1,18 +1,19 @@
 # Codestash — Project Setup &amp; Context
 
 A personal dev reference catalog (manuals, hooks, helpers, blocks, AI
-instructions), built on Next.js + shadcn. Being migrated from static
-`lib/data/*.ts` files onto Neon + Drizzle + Better Auth — see
-`lib/data/manuals/next16-neon-better-auth.ts` (the "next16-neon-better-auth"
-manual, browsable in the app itself) for the full roadmap and rationale.
-This file is the practical "get it running" guide, kept in sync as the
-project evolves — see `folder-structure.txt` for the current file layout.
+instructions), built on Next.js + shadcn, fully migrated onto Neon +
+Drizzle + Better Auth as of 2026-09-03 (see "Where things stand" below)
+— see the "next16-neon-better-auth" manual, browsable in the app itself
+(DB-backed content, not a static file), for the fuller roadmap and
+rationale behind that migration. This file is the practical "get it
+running" guide, kept in sync as the project evolves — see
+`folder-structure.txt` for the current file layout.
 
 ## Prerequisites
 
 - Node.js + npm
-- A [Neon](https://neon.tech) account (free tier is fine) once you get to the
-  database steps below — not needed just to browse the static catalog.
+- A [Neon](https://neon.tech) account (free tier is fine) — required from the
+  start now; there's no static-catalog fallback to browse without a database.
 
 ## Install
 
@@ -20,15 +21,16 @@ project evolves — see `folder-structure.txt` for the current file layout.
 npm install
 ```
 
-## Run the dev server (static catalog only)
+## Run the dev server
 
 ```bash
 npm run dev
 ```
 
 Visit `/` to browse categories, or any manual directly, e.g. `/manuals/mastering-git`.
-This works with zero setup — the catalog currently reads straight from the
-static files in `lib/data/`, no database required yet.
+**Requires the database setup below** — as of 2026-09-03 the catalog is
+100% DB-backed, with no static fallback left; without `DATABASE_URL` set,
+`lib/db/index.ts` throws immediately and nothing renders.
 
 ## Database setup (Neon + Drizzle)
 
@@ -77,23 +79,25 @@ Route groups split the app by chrome:
   (hidden entirely when signed out) showing either "Create workspace" or
   the org name expanded (`defaultOpen`, so "Members" is visible without an
   extra click — this is the actual fix for "I can't find where to create a
-  workspace"), and a "Browse" group that's **dual-mode**: if the active
-  workspace has any categories seeded into the `category` table, those are
-  fetched (`getCategoriesForActiveOrg` server action) and rendered
-  reorderable (`SortableCategoryList`, dnd-kit — drag handle only, so it
-  never conflicts with the click-to-expand row); otherwise it falls back to
-  the static `CATEGORY_LIST` (signed out, or a real workspace nothing's
-  been seeded into yet — there's still no "create category" UI). Either
-  way each category renders through the same `CategoryNavItem`
-  (icon/label/href/staticKey/dragHandle props — not tied to one data
-  source) and expands to list that category's subpages, sortable A-Z or
-  Newest, scrollable past a handful of items (an internal
+  workspace"), and a "Browse" group, DB-backed either way as of
+  2026-09-03: the caller's own active-org categories, reorderable
+  (`SortableCategoryList`, dnd-kit — drag handle only, so it never
+  conflicts with the click-to-expand row) when signed in with an active
+  workspace; otherwise a read-only list from the public catalog org
+  (`getPublicCategories()`, no drag handle) for a signed-out visitor or a
+  signed-in user with no active workspace — there's still no "create
+  category" UI, so a brand-new workspace with nothing seeded shows the
+  read-only public list too. Either way each category renders through the
+  same `CategoryNavItem` (icon/label/href/dbCategoryId/dragHandle props —
+  `dbCategoryId` always set now) and expands to list that category's
+  subpages (fetched from the `manual` table, `getManualsForCategory`),
+  sortable A-Z or Newest, scrollable past a handful of items (an internal
   `max-h-64 overflow-y-auto`, not a whole-sidebar scroll — other
   categories/the workspace section stay in place), with a "View category
-  page" link at the bottom. DB categories whose slug doesn't match one of
-  the 5 static ones (a genuinely custom category) render with "Nothing
-  here yet" instead of subpages — subpage content is still 100% the static
-  `lib/data/*` files regardless of where the category itself came from.
+  page" link at the bottom. A custom category (slug doesn't match one of
+  the 5 built-in ones, e.g. `codestash`) renders its real manuals exactly
+  like a built-in category does — nothing static or placeholder about it;
+  "Nothing here yet" only shows for a category that's genuinely empty.
   `components/sidebar/site-header.tsx` (black, lives inside `SidebarInset`
   so it can use `SidebarTrigger`) holds the brand, an always-visible inline
   search (no dialog/⌘K needed anymore), and the session-aware auth UI —

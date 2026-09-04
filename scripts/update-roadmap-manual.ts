@@ -53,10 +53,10 @@ const sections: Node[] = [
       {
         type: "list",
         items: [
-          "A working static catalog plus a real DB/auth layer — sign-up, sign-in, workspaces, invites, all working end-to-end.",
+          "A real DB/auth layer — sign-up, sign-in, workspaces, invites, all working end-to-end. **The catalog itself is 100% DB-backed now, with zero static content or fallback left anywhere** (`lib/data/` holds only shared types) — every read, including for a signed-out visitor, goes through the DB via a public-org fallback (`getPublicOrganizationId()`) so the catalog was never gated behind having a session.",
           "**Exactly one real organization exists**, created by a direct database insert — no repeatable path exists yet for a second one.",
           "**Production was live but broken, now fixed** — `/` and every `/api/auth/*` call were 500ing because `NEXT_PUBLIC_APP_URL` in Vercel's Production env vars was missing its `https://` scheme (better-auth's `new URL(baseURL)` threw on every request touching `lib/auth.ts`). Corrected and confirmed returning 200, 2026-09-03.",
-          "**CI now runs on every push** (`.github/workflows/ci.yml` — lint, `tsc --noEmit`, build) — added 2026-09-03. Still zero automated test suite; that's Phase 6, not this.",
+          "**CI now runs on every push** (`.github/workflows/ci.yml` — lint, `tsc --noEmit`, build) — added 2026-09-03. Still zero automated test suite; that's Phase 6, not this. The build step needs `DATABASE_URL`, `BETTER_AUTH_SECRET`, and `NEXT_PUBLIC_APP_URL` added as GitHub Actions repo secrets before it can actually pass — not yet confirmed done.",
           "**Zero billing** — nothing charges anyone anything today.",
           "The roles/plan model's shape is decided on paper — Plan B/C's numbers and the 2 non-owner role levels are still TBD — and **zero of it is enforced in code** either way, beyond better-auth's built-in defaults.",
           'No "create category" UI, and no create/edit UI for manuals or snippets, for any role.',
@@ -194,18 +194,18 @@ const sections: Node[] = [
         "A second real, paying organization can come into existence without a developer touching the database.",
       ),
       phase(
-        "Phase 3 — Core Product Completeness",
-        "No create/edit UI for manuals or snippets exists for any role today, and public pages ignore the database.",
+        "Phase 3 — Core Product Completeness (partly done ahead of schedule)",
+        "No create/edit UI for manuals or snippets exists for any role today. (The other original gap — public pages ignoring the database — is already closed as of 2026-09-03, see below.)",
         [
           "One shared editor for manuals and snippets — they already share the same table shape.",
-          'Public pages switch to "DB first, static fallback," matching the pattern subpages already use.',
+          "✓ Done, and taken further than planned — public pages switched from \"static unconditionally\" to fully DB-only, no fallback left at all, not just \"DB first, static fallback.\"",
           "Delete is soft (a status field), not a row removal.",
         ],
         [
           "Build the manual/snippet create form",
           "Build edit — same form, pre-filled",
           "Build soft-delete",
-          "Update `/` and `/[category]` to query DB first, static fallback only when empty",
+          "✓ Done — Update `/` and `/[category]` to query DB content — no static fallback left anywhere",
           "Icon picker — any lucide-react icon",
           "Background theme presets — a small fixed set",
         ],

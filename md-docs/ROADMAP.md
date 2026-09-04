@@ -1,6 +1,7 @@
 # Codestash — Roadmap to Success
 
-Status: expanded 2026-09-03 on `claude-redesign`. This is the index —
+Status: expanded 2026-09-03 on `claude-redesign`, merged to `main` and
+deployed same day. This is the index —
 current state, the principles behind the sequencing, and a phase-by-phase
 map. Each phase's full detail (locked decisions, checklist, deferred
 items, exit condition) lives in its own file under `roadmap/`, kept
@@ -19,15 +20,25 @@ Phase 4 doesn't have to load Phase 2's billing detail it doesn't need.
 
 ## The honest current state
 
-Not the optimistic version:
+Not the optimistic version. Last updated 2026-09-03:
 
-- A working static catalog plus a real DB/auth layer — sign-up, sign-in,
-  workspaces, invites, all working end-to-end.
+- A real DB/auth layer — sign-up, sign-in, workspaces, invites, all
+  working end-to-end. **The catalog itself is 100% DB-backed now, with
+  zero static content or fallback left anywhere** (`lib/data/` holds only
+  shared types) — every read, including for a signed-out visitor, goes
+  through the DB via a public-org fallback (`getPublicOrganizationId()`)
+  so the catalog was never gated behind having a session.
 - **Exactly one real organization exists**, created by a direct database
   insert — no repeatable path exists yet for a second one.
-- **Production is live but broken** — `/` and every `/api/auth/*` call
-  were 500ing as of the last check, root cause not yet found.
-- **Zero tests, zero CI** anywhere in the repo — verified, not assumed.
+- **Production was live but broken, now fixed** — `/` and every
+  `/api/auth/*` call were 500ing because `NEXT_PUBLIC_APP_URL` in
+  Vercel's Production env vars was missing its `https://` scheme.
+  Corrected and confirmed returning 200, 2026-09-03.
+- **CI now runs on every push** (`.github/workflows/ci.yml` — lint,
+  `tsc --noEmit`, build) — still zero automated test suite; that's
+  Phase 6, not this. CI's build step needs `DATABASE_URL`,
+  `BETTER_AUTH_SECRET`, and `NEXT_PUBLIC_APP_URL` added as GitHub Actions
+  repo secrets before it can actually pass — not yet confirmed done.
 - **Zero billing** — nothing charges anyone anything today.
 - The roles/plan model's shape is decided on paper (Plan A's seat
   pricing, the 3-role structure) — Plan B/C's numbers and the 2 non-owner
@@ -54,8 +65,8 @@ phase's locked decisions trace back to one of these.
    organization" is the foundation the whole design sits on. An ugly,
    working checkout beats a beautiful app with no way to charge anyone.
 4. **Fix what's live before designing what's next.** An unresolved
-   production outage sits underneath this entire plan — Phase 0 exists
-   because of it.
+   production outage sat underneath this entire plan — Phase 0 exists
+   because of it, and is now resolved.
 5. **Bring in a safety net exactly when the stakes go up.** No tests, no
    CI is fine for a personal tool. It stops being fine once plans,
    seats, and permissions gate what real people can do and pay for.
@@ -64,7 +75,7 @@ phase's locked decisions trace back to one of these.
 
 | # | Phase | Exit condition | Detail |
 |---|---|---|---|
-| 0 | **Stabilize** — *you are here* | Production serves every route without a 500; broken builds can't merge silently | [roadmap/00-stabilize.md](roadmap/00-stabilize.md) |
+| 0 | **Stabilize** — nearly done, *you are here* | Production serves every route without a 500 (✓); broken builds can't merge silently (pending CI repo secrets) | [roadmap/00-stabilize.md](roadmap/00-stabilize.md) |
 | 1 | Foundations | No org/category/membership is ever created outside the app's own code paths | [roadmap/01-foundations.md](roadmap/01-foundations.md) |
 | 2 | Billing | A second real, paying org can exist without a developer touching the database | [roadmap/02-billing.md](roadmap/02-billing.md) |
 | 3 | Core product completeness | A workspace's content is fully self-service | [roadmap/03-core-product.md](roadmap/03-core-product.md) |
@@ -88,16 +99,24 @@ only touches those adapter layers, never the business logic on top.
 
 ## Where this leaves us
 
-Phase 0, just starting. The sequencing is deliberate — foundations
-before billing, billing before more product surface, product before team
+Phase 0's checklist is done except confirming the CI repo secrets are
+added — the rest of that phase (the prod outage, CI itself) is fixed and
+live. The static-to-DB migration wasn't originally scoped as a Phase 0
+item, but it's done too, ahead of its natural home in Phase 3. The
+sequencing for what's left is still deliberate — foundations before
+billing, billing before more product surface, product before team
 features, team features before polish, polish before hardening. Skipping
 ahead (more UI before the permission layer exists, for instance) is
 exactly the pattern this roadmap exists to correct.
 
-## Later: bringing this into the app itself
+## Bringing this into the app itself
 
-Once this plan is solid and not actively changing, the goal is to make
-it a subpage under the Manuals category in Codestash itself — browsable
-and searchable in-app, the same way the "next16-neon-better-auth" manual
-already works. Not started yet; this file and `roadmap/` are the staging
-ground for that content.
+Done, not just planned — this file and the `roadmap/` phase files are
+browsable in-app as the "Roadmap to Success" manual under the
+`codestash` category (`scripts/seed-roadmap-manual.ts` seeded it,
+`scripts/update-roadmap-manual.ts` re-syncs it — re-run that one whenever
+this file or `roadmap/*.md` change, the same discipline STORY.md,
+SETUP.md, and ROLES-AND-BILLING-PLAN.md need via
+`scripts/seed-doc-family-manuals.ts`, though that one isn't re-runnable
+yet — see the note in Claude's memory / ask it to build the update
+version of that script too if it's drifted).

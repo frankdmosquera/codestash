@@ -1,7 +1,8 @@
 # Phase 0 — Stabilize
 
-**Status: you are here.** See `../ROADMAP.md` for how this fits with the
-other phases.
+See `./ROADMAP.md`'s phase table for how this fits with the other
+phases and which one is current — computed from checklist state, not
+hand-maintained here, so it's never stale.
 
 Fix what's actually live before doing anything else. No architecture
 work starts until production is honest again.
@@ -28,6 +29,10 @@ work starts until production is honest again.
       on every push to any branch — requires `DATABASE_URL`, `BETTER_AUTH_SECRET`, and
       `NEXT_PUBLIC_APP_URL` set as GitHub Actions repo secrets or the build step fails
 - [x] Commit `.env.example` (already written, was sitting uncommitted as of this doc)
+- [ ] Confirm `DATABASE_URL`, `BETTER_AUTH_SECRET`, and `NEXT_PUBLIC_APP_URL`
+      are actually added as GitHub Actions repo secrets — the workflow file
+      exists and requires them, but a green CI run confirming they're set
+      hasn't happened yet
 
 ## Deferred, on purpose
 

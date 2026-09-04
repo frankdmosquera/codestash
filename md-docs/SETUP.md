@@ -245,14 +245,13 @@ than deleted outright, since the "why" is still useful history):
   lucide-react icon, not just `lib/icon-map.ts`'s small curated set) and
   background theme presets are still future work — every category besides
   the 5 built-in ones renders with a plain default look, no custom
-  Background component, on purpose (see [[codestash_no_static_data_goal]]
-  in Claude's memory / the equivalent decision recorded in
-  `md-docs/ROADMAP.md`).
+  Background component, on purpose (see the equivalent decision recorded
+  in `md-docs/roadmap/ROADMAP.md`).
 - Also added: `organization.plan` (defaults `"free"`) — groundwork for a
   future free-vs-paid category cap, not enforced anywhere yet, no billing
   wired up. See `md-docs/ROLES-AND-BILLING-PLAN.md` for the full design
-  this is heading toward, and `md-docs/ROADMAP.md` for the build-out
-  sequencing.
+  this is heading toward, and `md-docs/roadmap/ROADMAP.md` for the
+  build-out sequencing.
 
 `mastering-git` (the one hand-authored manual, formerly
 `lib/data/manuals/mastering-git.ts`, now DB-only) had picked up stray

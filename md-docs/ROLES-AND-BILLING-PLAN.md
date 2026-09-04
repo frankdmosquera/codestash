@@ -3,7 +3,7 @@
 Status: **agreed direction, locked in 2026-09-03. Nothing below is built yet** —
 this is the plan the next phase of work should follow, not a description of
 current behavior. See `md-docs/SETUP.md` for what's actually built today, and
-`md-docs/ROADMAP.md` for the sequencing that builds toward this design.
+`md-docs/roadmap/ROADMAP.md` for the sequencing that builds toward this design.
 
 This grew out of a conversation about why sidebar drag-and-drop wasn't
 working (turned out to be a missing `member` row for the one real

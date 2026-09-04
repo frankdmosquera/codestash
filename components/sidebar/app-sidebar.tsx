@@ -17,6 +17,7 @@ import { useAutoActiveOrganization } from "@/lib/hooks/use-auto-active-organizat
 import { useCloseSidebarOnOutsideClick } from "@/lib/hooks/use-close-sidebar-on-outside-click";
 import { CategoryNavItem } from "./category-nav-item";
 import { CategoryOpenProvider } from "./category-open-context";
+import { CreateCategoryDialog } from "./create-category-dialog";
 import { SortableCategoryList } from "./sortable-category-list";
 import { WorkspaceNavItem } from "./workspace-nav-item";
 
@@ -61,8 +62,9 @@ export function AppSidebar() {
         )}
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-neutral-500">
+          <SidebarGroupLabel className="flex items-center justify-between text-neutral-500">
             Browse
+            {organization && <CreateCategoryDialog organizationId={organization.id} />}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <CategoryOpenProvider>

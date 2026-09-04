@@ -2,10 +2,29 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, emailOTP, organization } from "better-auth/plugins";
 import { adminAc } from "better-auth/plugins/admin/access";
+import {
+  defaultAc as orgAc,
+  adminAc as orgAdminAc,
+  memberAc as orgMemberAc,
+} from "better-auth/plugins/organization/access";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "./db";
 
 const baseURL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+// Same permissions as better-auth's built-in ownerAc, minus
+// "delete" on `organization` — see md-docs/ROLES-AND-BILLING-PLAN.md #1:
+// only the platform superadmin (the `admin` plugin's role above) can
+// delete an org, not even its own owner. This is the one deliberate
+// override of better-auth's defaults; admin/member keep their defaults
+// (admin already can't delete by default, member never could).
+const orgOwnerAcNoDelete = orgAc.newRole({
+  organization: ["update"],
+  member: ["create", "update", "delete"],
+  invitation: ["create", "cancel"],
+  team: ["create", "update", "delete"],
+  ac: ["create", "read", "update", "delete"],
+});
 
 export const auth = betterAuth({
   baseURL,
@@ -35,12 +54,19 @@ export const auth = betterAuth({
     // member = non-paying guest editor. The "can edit up to 5 records,
     // can't invite anyone" limits for member are enforced in app code,
     // not here — better-auth's roles gate *actions*, not per-user counts.
+    // `roles` below overrides the built-in owner so it can't delete the
+    // org either — see orgOwnerAcNoDelete above.
     // TODO: sendInvitationEmail only logs to the server console right now —
     // same placeholder situation as emailOTP below, until a real email
     // provider is wired up. Better Auth doesn't generate the accept URL
     // itself, so we build it here pointing at our own accept page.
     organization({
       allowUserToCreateOrganization: true,
+      roles: {
+        owner: orgOwnerAcNoDelete,
+        admin: orgAdminAc,
+        member: orgMemberAc,
+      },
       sendInvitationEmail: async (data) => {
         const acceptUrl = `${baseURL}/invite/accept?id=${data.id}`;
         console.log(

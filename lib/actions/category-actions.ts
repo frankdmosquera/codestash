@@ -8,6 +8,12 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { category } from "@/lib/db/schema/app-schema";
 import { getPublicOrganizationId } from "@/lib/actions/public-organization";
+import { requireOrgRole } from "@/lib/actions/require-org-role";
+import { slugify } from "@/lib/utils";
+import {
+  createCategoryValidationSchema,
+  type CreateCategoryValidationInput,
+} from "@/lib/validations/category-validation";
 
 export type DbCategoryRow = {
   id: string;
@@ -69,7 +75,9 @@ export async function getPublicCategories(): Promise<DbCategoryRow[]> {
 }
 
 // Moves `categoryId` to sit between `beforeRank` and `afterRank` (either
-// may be null for "start of list" / "end of list"). Verifies the category
+// may be null for "start of list" / "end of list"). Reordering the
+// workspace's own category structure is an owner/admin action, not
+// something a non-paying member gets to do. Verifies the category
 // actually belongs to the caller's active org before writing — the client
 // only sends ranks, never trusts them for authorization.
 export async function reorderCategoryAction(
@@ -77,11 +85,7 @@ export async function reorderCategoryAction(
   beforeRank: string | null,
   afterRank: string | null,
 ) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  const organizationId = session?.session.activeOrganizationId;
-  if (!organizationId) {
-    throw new Error("No active workspace");
-  }
+  const { organizationId } = await requireOrgRole(["owner", "admin"]);
 
   const newRank = generateKeyBetween(beforeRank, afterRank);
 
@@ -98,4 +102,53 @@ export async function reorderCategoryAction(
   }
 
   return { rank: newRank };
+}
+
+// Creates a category in the caller's active workspace — owner/admin only,
+// same as reordering. Icon and background stay at the schema's own
+// defaults (a plain "BookOpen" icon, "default" theme) — the icon/theme
+// picker is deliberately future work, not this pass.
+export async function createCategoryAction(input: CreateCategoryValidationInput) {
+  const { organizationId } = await requireOrgRole(["owner", "admin"]);
+  const { label } = createCategoryValidationSchema.parse(input);
+  const slug = slugify(label);
+  if (!slug) {
+    throw new Error("That name doesn't produce a usable URL slug");
+  }
+
+  const existing = await db.query.category.findFirst({
+    where: and(eq(category.organizationId, organizationId), eq(category.slug, slug)),
+  });
+  if (existing) {
+    throw new Error(`A category named "${label}" already exists`);
+  }
+
+  const siblings = await db
+    .select({ rank: category.rank })
+    .from(category)
+    .where(eq(category.organizationId, organizationId))
+    .orderBy(asc(category.rank));
+  const lastRank = siblings.at(-1)?.rank ?? null;
+  const rank = generateKeyBetween(lastRank, null);
+
+  const [created] = await db
+    .insert(category)
+    .values({
+      id: crypto.randomUUID(),
+      organizationId,
+      slug,
+      label,
+      rank,
+    })
+    .returning({
+      id: category.id,
+      slug: category.slug,
+      label: category.label,
+      description: category.description,
+      icon: category.icon,
+      backgroundTheme: category.backgroundTheme,
+      rank: category.rank,
+    });
+
+  return created;
 }

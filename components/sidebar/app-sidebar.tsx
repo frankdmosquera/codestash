@@ -10,9 +10,9 @@ import {
   SidebarGroupLabel,
   SidebarMenu,
 } from "@/components/ui/sidebar";
-import { CATEGORY_LIST } from "@/lib/constants/categories";
+import { resolveIcon } from "@/lib/icon-map";
 import { authClient, useSession } from "@/lib/auth-client";
-import { getCategoriesForActiveOrg } from "@/lib/actions/category-actions";
+import { getCategoriesForActiveOrg, getPublicCategories } from "@/lib/actions/category-actions";
 import { useAutoActiveOrganization } from "@/lib/hooks/use-auto-active-organization";
 import { useCloseSidebarOnOutsideClick } from "@/lib/hooks/use-close-sidebar-on-outside-click";
 import { CategoryNavItem } from "./category-nav-item";
@@ -26,17 +26,25 @@ export function AppSidebar() {
   useAutoActiveOrganization();
   useCloseSidebarOnOutsideClick();
 
-  const { data: dbCategories } = useQuery({
+  const { data: ownCategories } = useQuery({
     queryKey: ["categories", organization?.id],
     queryFn: getCategoriesForActiveOrg,
     enabled: !!organization,
   });
 
+  // Signed-out visitor, or a signed-in user with no active workspace — the
+  // catalog is public content, so it still reads from the DB, just without
+  // reorder (no drag handle passed below; reorderCategoryAction requires a
+  // real active-org session regardless of what the UI would let you try).
+  const { data: publicCategories } = useQuery({
+    queryKey: ["public-categories"],
+    queryFn: getPublicCategories,
+    enabled: !organization,
+  });
+
   // Reorderable, DB-backed categories once the active workspace actually
-  // has some seeded; otherwise the fixed static list — e.g. signed out,
-  // no active workspace, or a brand-new workspace nothing's been seeded
-  // into yet (there's no "create category" UI yet to have made any).
-  const useDbCategories = !!organization && !!dbCategories && dbCategories.length > 0;
+  // has some seeded; otherwise the read-only public catalog.
+  const useOwnCategories = !!organization && !!ownCategories && ownCategories.length > 0;
 
   return (
     <Sidebar className="border-neutral-800 bg-neutral-950 text-neutral-200 **:data-[slot=sidebar-container]:bg-neutral-950 **:data-[slot=sidebar-gap]:bg-neutral-950">
@@ -58,17 +66,17 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <CategoryOpenProvider>
-              {useDbCategories ? (
-                <SortableCategoryList categories={dbCategories} />
+              {useOwnCategories ? (
+                <SortableCategoryList categories={ownCategories} />
               ) : (
                 <SidebarMenu>
-                  {CATEGORY_LIST.map((category) => (
+                  {(publicCategories ?? []).map((row) => (
                     <CategoryNavItem
-                      key={category.key}
-                      icon={category.icon}
-                      label={category.label}
-                      href={category.href}
-                      staticKey={category.key}
+                      key={row.id}
+                      icon={resolveIcon(row.icon)}
+                      label={row.label}
+                      href={`/${row.slug}`}
+                      dbCategoryId={row.id}
                     />
                   ))}
                 </SidebarMenu>

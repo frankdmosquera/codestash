@@ -7,6 +7,7 @@ import { generateKeyBetween } from "fractional-indexing";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { category } from "@/lib/db/schema/app-schema";
+import { getPublicOrganizationId } from "@/lib/actions/public-organization";
 
 export type DbCategoryRow = {
   id: string;
@@ -42,6 +43,29 @@ export async function getCategoriesForActiveOrg(): Promise<DbCategoryRow[]> {
     .orderBy(asc(category.rank));
 
   return rows;
+}
+
+// Read-only counterpart for a signed-out visitor (or a signed-in user with
+// no active workspace) — the sidebar and category pages should still show
+// the real catalog, not the static fallback, just without drag-to-reorder
+// (reorderCategoryAction requires a real active-org session regardless).
+export async function getPublicCategories(): Promise<DbCategoryRow[]> {
+  const organizationId = await getPublicOrganizationId();
+  if (!organizationId) return [];
+
+  return db
+    .select({
+      id: category.id,
+      slug: category.slug,
+      label: category.label,
+      description: category.description,
+      icon: category.icon,
+      backgroundTheme: category.backgroundTheme,
+      rank: category.rank,
+    })
+    .from(category)
+    .where(eq(category.organizationId, organizationId))
+    .orderBy(asc(category.rank));
 }
 
 // Moves `categoryId` to sit between `beforeRank` and `afterRank` (either

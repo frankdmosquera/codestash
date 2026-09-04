@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getTopItems } from "@/lib/helpers/get-top-items";
-import { CATEGORIES, getCategoryBySlug } from "@/lib/constants/categories";
+import { CATEGORIES } from "@/lib/constants/categories";
 import type { CatalogCategoryKey } from "@/lib/data/types";
 import { getResolvedItemsForCategory } from "@/lib/actions/manual-actions";
 
@@ -19,11 +19,7 @@ type CategoryCardProps = {
 export async function CategoryCard({ categoryKey }: CategoryCardProps) {
   const { label, href, icon: Icon } = CATEGORIES[categoryKey];
   const categorySlug = href.slice(1); // href is "/manuals" etc.
-  const allItems = await getResolvedItemsForCategory(
-    categorySlug,
-    getCategoryBySlug(categorySlug)?.key,
-    href,
-  );
+  const allItems = await getResolvedItemsForCategory(categorySlug, href);
   const items = getTopItems(allItems, 4);
 
   return (

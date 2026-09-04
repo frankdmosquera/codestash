@@ -27,10 +27,13 @@ npm install
 npm run dev
 ```
 
-Visit `/` to browse categories, or any manual directly, e.g. `/manuals/mastering-git`.
-**Requires the database setup below** — as of 2026-09-03 the catalog is
-100% DB-backed, with no static fallback left; without `DATABASE_URL` set,
-`lib/db/index.ts` throws immediately and nothing renders.
+Sign in, then visit `/` to browse categories, or any manual directly, e.g.
+`/manuals/mastering-git`. **Requires the database setup below** — the
+catalog is 100% DB-backed with no static fallback left; without
+`DATABASE_URL` set, `lib/db/index.ts` throws immediately and nothing
+renders. **Also requires a session as of 2026-09-04** — every catalog
+route redirects to `/sign-in` if you're signed out (see the auth-gating
+note further down).
 
 ## Database setup (Neon + Drizzle)
 
@@ -192,28 +195,33 @@ going and getting each provider's credentials. Note: being flagged as the
 platform `superadmin` (not workspace `owner` — a separate, app-wide role)
 is still a manual one-time step, not wired into any UI yet.
 
-**As of 2026-09-03, the catalog is 100% DB-backed — no static content or
-fallback remains anywhere.** `lib/data/` now holds only `types.ts` (shared
-TypeScript types); the `manuals/`, `hooks/`, `helpers/`, `blocks/`, and
-`ai-instructions/` folders that used to hold hardcoded content are
-deleted. This closes the gap the paragraphs below used to describe (kept
-here, updated, rather than deleted outright, since the "why" is still
-useful history):
+**As of 2026-09-04, the catalog is 100% DB-backed and fully auth-gated —
+no static content and no public/signed-out access remain anywhere.**
+`lib/data/` now holds only `types.ts` (shared TypeScript types); the
+`manuals/`, `hooks/`, `helpers/`, `blocks/`, and `ai-instructions/`
+folders that used to hold hardcoded content are deleted. This closes the
+gap the paragraphs below used to describe (kept here, updated, rather
+than deleted outright, since the "why" is still useful history):
 
 - Every read path — subpages, category listing pages, the homepage's
   category cards, sidebar categories, sidebar subitems, and sidebar
   search — resolves through `lib/actions/manual-actions.ts` and
-  `lib/actions/category-actions.ts`, all DB-only now.
-- The real blocker wasn't missing data, it was that every one of those
-  reads required `session.activeOrganizationId` — so a signed-out visitor
-  (i.e. the actual public site) never saw DB content no matter what was
-  in it, and silently fell back to static files instead. Fixed by
-  `lib/actions/public-organization.ts`'s `getPublicOrganizationId()`: any
-  read with no active-org session now falls back to the one real
-  ("codestash"-slug) organization instead of returning nothing. Writes
-  (`reorderCategoryAction`, etc.) are untouched — still require a real
-  session, so a signed-out visitor gets a read-only sidebar (no drag
-  handle) even though the same DB rows power it.
+  `lib/actions/category-actions.ts`, all DB-only now. The homepage
+  (`app/(main)/page.tsx`) was actually the last holdout here — it kept
+  rendering a hardcoded `CATEGORY_LIST` until 2026-09-04, showing every
+  visitor the same 5 built-in cards regardless of their real org. Fixed
+  the same day as the auth-gating reversal below.
+- **Reversed 2026-09-04:** the catalog used to fall back to the public
+  ("codestash"-slug) organization for a signed-out visitor, via
+  `lib/actions/public-organization.ts`'s `getPublicOrganizationId()` —
+  intentional at the time, so anyone could browse without an account.
+  That file is deleted; there is no more public fallback. Every route now
+  requires a real session, enforced in `proxy.ts` (fast, cookie-presence
+  check) plus a per-page server-verified `auth.api.getSession(...)` check
+  in each protected page — same belt-and-suspenders pattern as
+  `app/(main)/onboarding/page.tsx` always used. A signed-out visitor is
+  redirected to `/sign-in` and sees nothing. See
+  `ROLES-AND-BILLING-PLAN.md` #5 for the reasoning.
 - Snippets (hooks/helpers/blocks/AI instructions) don't have their own
   table — the old separate `snippet` table was retired in favor of
   storing a snippet as a `manual` row with exactly one section and a

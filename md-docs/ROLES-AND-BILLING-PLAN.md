@@ -16,9 +16,16 @@ archaeology.
 
 ## Where the code stands today (as of this doc)
 
-- The public catalog (manuals/hooks/helpers/blocks/AI-instructions) works
-  with zero setup — no login, no database, just static files. That's the
-  logged-out experience.
+- The catalog (manuals/hooks/helpers/blocks/AI-instructions) is 100%
+  DB-backed and org-scoped. **Reversed 2026-09-04:** it is no longer
+  public — every route requires a real session (enforced in `proxy.ts`,
+  plus a per-page server-verified check in each page, same
+  belt-and-suspenders pattern as `app/(main)/onboarding/page.tsx`). A
+  signed-out visitor is redirected to `/sign-in` and sees nothing. The
+  earlier "browse with zero setup" idea may come back later as a
+  genuinely separate, localStorage-only demo experience for free users —
+  not the real DB-backed catalog — but that's a different architecture,
+  not built.
 - Sign-up, sign-in, and the workspace flow already work end-to-end against
   a real database: creating a workspace makes you its `owner`, you can
   invite people as `admin` or `member`, and they can accept the invite.
@@ -62,19 +69,20 @@ that org's owner/manager.
 Three plans: **A** (premium, most features), **B** (middle, not detailed
 yet), **C** (cheapest, fewest features).
 
-Each plan scales with seat count rather than being a flat price. For Plan
-A:
+Each plan scales with seat count rather than being a flat price, all
+three following the same shape — front-loaded, flattening to a steady
+per-seat rate — locked 2026-09-04:
 
-| Seats | Price |
-|---|---|
-| 1 | $10 |
-| 2 | $18 |
-| 3 | $25 |
-| 4th and beyond | +$7 each |
+| Seats | Plan A | Plan B | Plan C |
+|---|---|---|---|
+| 1 | $10 | $7 | $5 |
+| 2 | $18 (+8) | $13 (+6) | $9 (+4) |
+| 3 | $25 (+7) | $18 (+5) | $12 (+3) |
+| 4th and beyond | +$7 each | +$5 each | +$3 each |
 
-Plan C follows the same shaped curve — front-loaded, flattening to a
-steady per-seat rate — with lower numbers throughout. Plan B sits in
-between. **Exact numbers for B and C are still TBD.**
+Each plan's steady-state marginal rate (A=$7, B=$5, C=$3) sets its
+first-seat increment at marginal+$1, matching Plan A's own pattern
+(marginal $7, first jump $8).
 
 This dial controls whole-org feature ceilings: number of categories,
 custom backgrounds/icons, number of invites, and similar — the exact
@@ -83,17 +91,27 @@ feature-to-plan mapping is still open.
 ### 4. Org Role (Dial B) — separate from the plan, 3 levels
 
 Independent of plan/seat count. **Organization Manager** at the top (the
-owner — full oversight), then **2 more levels underneath** — not defined
-yet, placeholders for now. Whatever seat a person fills (bought via the
-plan above), they also get one of these 3 roles, which governs what they
-personally can do inside the org (invite, edit vs. view-only, etc.).
+owner — full oversight), then **2 more levels underneath**. Whatever seat
+a person fills (bought via the plan above), they also get one of these 3
+roles, which governs what they personally can do inside the org (invite,
+edit vs. view-only, etc.).
+
+**Mapping, confirmed 2026-09-04:** reuses better-auth's existing
+`owner`/`admin`/`member` roles rather than a second, parallel role
+system — Organization Manager = `owner`, and the 2 previously-undefined
+levels map to `admin` and `member`, using better-auth's built-in
+permissions (invite/manage members = owner+admin, not member) as-is
+rather than inventing new permission primitives.
 
 ### 5. Free / no-org users
 
 An invited person isn't really "in" until they sign up through the invite
 link and create an account — that's what turns "invited" into "can edit /
 can view / whatever their role allows." Someone who never pays and is
-never invited never gets an organization at all.
+never invited never gets an organization at all — and, as of the reversal
+above, never sees any catalog content either. "Free" no longer means
+"read-only public access"; it means no access, full stop, until invited
+or paying.
 
 ## What's missing to make this plan real
 

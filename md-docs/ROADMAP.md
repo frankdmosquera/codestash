@@ -24,10 +24,14 @@ Not the optimistic version. Last updated 2026-09-03:
 
 - A real DB/auth layer — sign-up, sign-in, workspaces, invites, all
   working end-to-end. **The catalog itself is 100% DB-backed now, with
-  zero static content or fallback left anywhere** (`lib/data/` holds only
-  shared types) — every read, including for a signed-out visitor, goes
-  through the DB via a public-org fallback (`getPublicOrganizationId()`)
-  so the catalog was never gated behind having a session.
+  zero static content left anywhere** (`lib/data/` holds only shared
+  types) — fixed 2026-09-04: the home page (`app/(main)/page.tsx`) was
+  still rendering a hardcoded `CATEGORY_LIST`, showing every visitor the
+  same 5 built-in category cards regardless of their actual org, an
+  oversight from the original DB migration. Also reversed the same day:
+  the catalog is no longer public — every route requires a real session
+  (`proxy.ts` + a per-page server-verified check), a signed-out visitor is
+  redirected to `/sign-in`. See `ROLES-AND-BILLING-PLAN.md` #5.
 - **Exactly one real organization exists**, created by a direct database
   insert — no repeatable path exists yet for a second one.
 - **Production was live but broken, now fixed** — `/` and every
@@ -83,10 +87,11 @@ phase's locked decisions trace back to one of these.
 | 5 | Polish — original UX work | The sidebar UX work done right, with real architecture underneath | [roadmap/05-polish.md](roadmap/05-polish.md) |
 | 6 | Scale readiness | Ready to hold up under real, paying usage | [roadmap/06-scale-readiness.md](roadmap/06-scale-readiness.md) |
 
-Two decisions in the phase details are flagged as **confirm-before-building**
-rather than fully locked: the Organization Manager → better-auth role
-mapping (Phase 1) and the Stripe/Vitest choices (Phases 2 and 6). Everything
-else in each phase file is written to be built as-is, not re-debated.
+One decision in the phase details is still flagged as
+**confirm-before-building** rather than fully locked: the Stripe/Vitest
+choices (Phases 2 and 6). The Organization Manager → better-auth role
+mapping (Phase 1) was confirmed 2026-09-04. Everything else in each phase
+file is written to be built as-is, not re-debated.
 
 ## Infra independence
 

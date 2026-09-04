@@ -7,7 +7,6 @@ import { generateKeyBetween } from "fractional-indexing";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { category } from "@/lib/db/schema/app-schema";
-import { getPublicOrganizationId } from "@/lib/actions/public-organization";
 import { requireOrgRole } from "@/lib/actions/require-org-role";
 import { slugify } from "@/lib/utils";
 import {
@@ -25,38 +24,13 @@ export type DbCategoryRow = {
   rank: string;
 };
 
-// Returns [] for a signed-out visitor or a signed-in user with no active
-// workspace — callers fall back to the static category list in that case.
-// Also [] for a real workspace that just hasn't been seeded with any
-// categories yet (no "create category" UI exists yet to have made any).
+// Used by both the sidebar and the home page — every route that reaches
+// this requires a session (see proxy.ts), so [] here only ever means a real
+// org that just hasn't created any categories yet. Callers must render
+// that as an empty workspace, never fall back to another org's categories.
 export async function getCategoriesForActiveOrg(): Promise<DbCategoryRow[]> {
   const session = await auth.api.getSession({ headers: await headers() });
   const organizationId = session?.session.activeOrganizationId;
-  if (!organizationId) return [];
-
-  const rows = await db
-    .select({
-      id: category.id,
-      slug: category.slug,
-      label: category.label,
-      description: category.description,
-      icon: category.icon,
-      backgroundTheme: category.backgroundTheme,
-      rank: category.rank,
-    })
-    .from(category)
-    .where(eq(category.organizationId, organizationId))
-    .orderBy(asc(category.rank));
-
-  return rows;
-}
-
-// Read-only counterpart for a signed-out visitor (or a signed-in user with
-// no active workspace) — the sidebar and category pages should still show
-// the real catalog, not the static fallback, just without drag-to-reorder
-// (reorderCategoryAction requires a real active-org session regardless).
-export async function getPublicCategories(): Promise<DbCategoryRow[]> {
-  const organizationId = await getPublicOrganizationId();
   if (!organizationId) return [];
 
   return db

@@ -3,31 +3,39 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getTopItems } from "@/lib/helpers/get-top-items";
-import { CATEGORIES } from "@/lib/constants/categories";
-import type { CatalogCategoryKey } from "@/lib/data/types";
+import { resolveIcon } from "@/lib/icon-map";
 import { getResolvedItemsForCategory } from "@/lib/actions/manual-actions";
+import type { DbCategoryRow } from "@/lib/actions/category-actions";
+
+// Takes the already-resolved icon component as a prop rather than resolving
+// it inline where it's rendered — same pattern as CategoryIcon in
+// [category]/page.tsx (resolveIcon()'s result used as a JSX tag in the same
+// scope it's assigned in trips the "components created during render" rule).
+function CategoryCardIcon({ icon: Icon }: { icon: LucideIcon }) {
+  return <Icon className="size-5 text-teal-400" strokeWidth={1.75} />;
+}
 
 type CategoryCardProps = {
-  categoryKey: CatalogCategoryKey;
+  category: DbCategoryRow;
 };
 
-export async function CategoryCard({ categoryKey }: CategoryCardProps) {
-  const { label, href, icon: Icon } = CATEGORIES[categoryKey];
-  const categorySlug = href.slice(1); // href is "/manuals" etc.
-  const allItems = await getResolvedItemsForCategory(categorySlug, href);
+export async function CategoryCard({ category }: CategoryCardProps) {
+  const href = `/${category.slug}`;
+  const allItems = await getResolvedItemsForCategory(category.slug, href);
   const items = getTopItems(allItems, 4);
 
   return (
     <Card className="flex h-full flex-col justify-between bg-neutral-900 p-6">
       <div>
         <div className="flex items-center gap-2">
-          <Icon className="size-5 text-teal-400" strokeWidth={1.75} />
-          <h3 className="text-2xl font-semibold text-white">{label}</h3>
+          <CategoryCardIcon icon={resolveIcon(category.icon)} />
+          <h3 className="text-2xl font-semibold text-white">{category.label}</h3>
         </div>
 
         <ul className="mt-3 space-y-0.5">

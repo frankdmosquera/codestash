@@ -1,11 +1,13 @@
 // page.tsx
 // → app/page.tsx
 
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { CATEGORY_LIST } from "@/lib/constants/categories";
-// import { CategoryCard } from "@/components/category-card";
+import { auth } from "@/lib/auth";
 import { GitGraphBackground } from "@/components/git-graph-background";
 import { CategoryCard } from "@/components/category-card";
+import { getCategoriesForActiveOrg } from "@/lib/actions/category-actions";
 
 export const metadata: Metadata = {
   title: {
@@ -13,7 +15,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Source of truth for access control — proxy.ts only does a fast,
+  // cookie-presence redirect; this is the real, server-verified check.
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect("/sign-in");
+
+  const categories = await getCategoriesForActiveOrg();
+
   return (
     <div className="mx-auto max-w-5xl px-6 py-16">
       <GitGraphBackground />
@@ -25,8 +34,8 @@ export default function HomePage() {
       </p>
 
       <div className="mt-10 grid gap-12 sm:grid-cols-2 lg:grid-cols-3">
-        {CATEGORY_LIST.map((category) => (
-          <CategoryCard key={category.key} categoryKey={category.key} />
+        {categories.map((category) => (
+          <CategoryCard key={category.id} category={category} />
         ))}
       </div>
     </div>

@@ -1,12 +1,12 @@
-// Server-only helper, not a Server Action itself — same reasoning as
-// public-organization.ts: only ever called from other "use server" action
-// files, never directly from a client component.
+// Server-only helper, not a Server Action itself — only ever called from
+// other "use server" action files, never directly from a client component.
 //
 // The one reusable permission-check helper every org-scoped *write*
-// should call first (see md-docs/roadmap/01-foundations.md) — reads stay
-// on the public-org fallback in manual-actions.ts/category-actions.ts,
-// this is specifically for actions that mutate something and need to
-// know the caller is actually allowed to.
+// should call first (see md-docs/roadmap/01-foundations.md) — reads in
+// manual-actions.ts/category-actions.ts just check for a session directly
+// (every route is auth-gated now, see proxy.ts), this is specifically for
+// actions that mutate something and need to know the caller's *role*, not
+// just that they're signed in.
 
 import { headers } from "next/headers";
 import { and, eq } from "drizzle-orm";

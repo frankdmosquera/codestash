@@ -1,9 +1,12 @@
 // category-card.tsx
 // → components/category-card.tsx
 
+"use client";
+
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 import { Card } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
@@ -25,10 +28,18 @@ type CategoryCardProps = {
   category: DbCategoryRow;
 };
 
-export async function CategoryCard({ category }: CategoryCardProps) {
+// Client component (not the async Server Component this used to be) so it
+// can live inside the home page's drag-and-drop grid — dnd-kit's
+// useSortable needs a client boundary around each draggable card either
+// way, so fetching its own item preview client-side (same pattern
+// CategoryNavItem already uses in the sidebar) costs nothing extra.
+export function CategoryCard({ category }: CategoryCardProps) {
   const href = `/${category.slug}`;
-  const allItems = await getResolvedItemsForCategory(category.slug, href);
-  const items = getTopItems(allItems, 4);
+  const { data: allItems } = useQuery({
+    queryKey: ["resolved-items", category.slug],
+    queryFn: () => getResolvedItemsForCategory(category.slug, href),
+  });
+  const items = getTopItems(allItems ?? [], 4);
 
   return (
     <Card className="flex h-full flex-col justify-between bg-neutral-900 p-6">

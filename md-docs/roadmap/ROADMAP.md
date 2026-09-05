@@ -48,12 +48,22 @@ Not the optimistic version. Last updated 2026-09-03:
   `BETTER_AUTH_SECRET`, and `NEXT_PUBLIC_APP_URL` added as GitHub Actions
   repo secrets before it can actually pass — not yet confirmed done.
 - **Zero billing** — nothing charges anyone anything today.
-- The roles/plan model's shape is decided on paper (Plan A's seat
-  pricing, the 3-role structure) — Plan B/C's numbers and the 2 non-owner
-  role levels are still explicitly TBD — and **zero of it is enforced in
-  code** either way, beyond better-auth's built-in defaults.
-- No "create category" UI, and no create/edit UI for manuals or
-  snippets, for any role.
+- The roles/plan model's numbers are locked now (Plan A/B/C's seat
+  pricing, `lib/config/plan-limits.ts`) and the 3-role structure is
+  confirmed (Organization Manager = `owner`, mapped to `admin`/`member`).
+  **Permission checks are real now too** — `requireOrgRole` gates every
+  org-scoped write. What's still not true: `plan-limits.ts`'s actual
+  limits (max categories, custom backgrounds) aren't wired into any real
+  feature gate yet, and seat-cap enforcement is deliberately deferred to
+  Phase 2 (no `seatsPurchased` field exists to enforce against).
+- **Create category UI exists** (Phase 1). **Create/edit UI for manuals
+  and snippets exists too, as of 2026-09-04** — owner/admin only, same
+  `requireOrgRole` pattern. One real limitation: it only supports flat,
+  single-block sections (no nesting, no multi-block sections), so editing
+  richer existing content (this roadmap manual, `mastering-git`, etc.)
+  through it isn't offered at all — the Edit button only appears when a
+  manual's actual structure is flat-compatible
+  (`lib/helpers/manual-edit-compat.ts`).
 
 ## Principles — corrections, not just a continuation
 

@@ -21,6 +21,10 @@ export const manual = pgTable(
     slug: text("slug").notNull(),
     title: text("title").notNull(),
     subtitle: text("subtitle"),
+    // Fractional-indexing rank, scoped per category (see category-schema.ts
+    // for the same pattern) — drag-and-drop reorders by changing just this
+    // column, never a stored position number.
+    rank: text("rank").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

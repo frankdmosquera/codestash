@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
@@ -21,9 +21,11 @@ function collectIds(sections: RenderedSection[]): string[] {
 export function ManualPageClient({
   title,
   sections,
+  editAction,
 }: {
   title: string;
   sections: RenderedSection[];
+  editAction?: ReactNode;
 }) {
   const [query, setQuery] = useState("");
   const allIds = useMemo(() => collectIds(sections), [sections]);
@@ -35,10 +37,11 @@ export function ManualPageClient({
   return (
     <div className=" text-black">
       <div className="bg-secondary-foreground p-3">
-        <div className="">
-          <h1 className="text-3xl font-semibold tracking-tight text-white mb-4">
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <h1 className="text-3xl font-semibold tracking-tight text-white">
             {title}
           </h1>
+          {editAction}
         </div>
         <div className="mb-4  flex flex-col gap-3 sm:flex-row sm:items-center ">
           <div className="relative flex-1 ">

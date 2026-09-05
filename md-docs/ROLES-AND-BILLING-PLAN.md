@@ -113,6 +113,34 @@ above, never sees any catalog content either. "Free" no longer means
 "read-only public access"; it means no access, full stop, until invited
 or paying.
 
+### 6. Free trials — new idea, 2026-09-04, not yet decided
+
+Raised while discussing what to build next: someone should be able to try
+Codestash as if they were a paying org, for a limited time, without
+handing over a card first. Nothing below is locked — this section exists
+so the idea doesn't get lost before Phase 2 actually starts, not to
+pre-decide it.
+
+- **Likely mechanism:** Stripe's own trial-period support
+  (`trial_period_days` on a subscription) rather than a separate,
+  hand-rolled trial system — fits directly into Phase 2's already-locked
+  "Stripe Checkout + subscriptions" approach instead of building a second,
+  parallel path.
+- **Open — needs a decision before building:** does starting a trial
+  still require a card on file (common, reduces throwaway signups) or
+  truly nothing upfront (lower friction, more abuse-prone)?
+- **Open — needs a decision before building:** what happens at
+  expiration — hard lock (no access at all until they pay), downgrade to
+  a restricted read-only state, or a grace period before data becomes
+  inaccessible? Each implies different code in the Stripe webhook handler
+  Phase 2 already plans to build.
+- **Open — needs a decision before building:** trial length, and whether
+  it's the same for every plan (A/B/C) or varies.
+- This is a third org-creation path alongside the two already described
+  above (#2's "paying creates an org," #5's "invited into an existing
+  one") — a trial org still needs an owner, still needs to occupy a real
+  seat, but exists before any payment has actually happened.
+
 ## What's missing to make this plan real
 
 Not a wishlist of every detail — just what's actually load-bearing before

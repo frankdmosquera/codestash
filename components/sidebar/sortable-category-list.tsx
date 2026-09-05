@@ -1,28 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Grip } from "lucide-react";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { DndContext, closestCenter } from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { Grip } from "lucide-react";
 
 import { SidebarMenu } from "@/components/ui/sidebar";
 import { resolveIcon } from "@/lib/icon-map";
-import { reorderCategoryAction, type DbCategoryRow } from "@/lib/actions/category-actions";
+import type { DbCategoryRow } from "@/lib/actions/category-actions";
+import { useCategoryReorder } from "@/lib/hooks/use-category-reorder";
 import { CategoryNavItem } from "./category-nav-item";
 
 function SortableItem({ row }: { row: DbCategoryRow }) {
@@ -69,45 +55,12 @@ function SortableItem({ row }: { row: DbCategoryRow }) {
 
 export function SortableCategoryList({
   categories,
+  organizationId,
 }: {
   categories: DbCategoryRow[];
+  organizationId: string | undefined;
 }) {
-  // Optimistic local order — synced whenever a fresh fetch comes in (e.g.
-  // React Query refetching after invalidation elsewhere).
-  const [items, setItems] = useState(categories);
-  useEffect(() => setItems(categories), [categories]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
-
-  async function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
-    const oldIndex = items.findIndex((item) => item.id === active.id);
-    const newIndex = items.findIndex((item) => item.id === over.id);
-    if (oldIndex === -1 || newIndex === -1) return;
-
-    const reordered = arrayMove(items, oldIndex, newIndex);
-    setItems(reordered);
-
-    const moved = reordered[newIndex];
-    const beforeRank = reordered[newIndex - 1]?.rank ?? null;
-    const afterRank = reordered[newIndex + 1]?.rank ?? null;
-
-    try {
-      const { rank } = await reorderCategoryAction(moved.id, beforeRank, afterRank);
-      setItems((current) =>
-        current.map((item) => (item.id === moved.id ? { ...item, rank } : item)),
-      );
-    } catch {
-      // Persist failed — fall back to the last known-good server order
-      // rather than leaving the sidebar showing an order that didn't save.
-      setItems(categories);
-    }
-  }
+  const { sensors, handleDragEnd } = useCategoryReorder(organizationId, categories);
 
   return (
     <DndContext
@@ -116,11 +69,11 @@ export function SortableCategoryList({
       onDragEnd={handleDragEnd}
     >
       <SortableContext
-        items={items.map((item) => item.id)}
+        items={categories.map((item) => item.id)}
         strategy={verticalListSortingStrategy}
       >
         <SidebarMenu>
-          {items.map((row) => (
+          {categories.map((row) => (
             <SortableItem key={row.id} row={row} />
           ))}
         </SidebarMenu>

@@ -121,6 +121,10 @@ async function main() {
       if (!categoryRow) {
         throw new Error('No "codestash" category found for this org yet.');
       }
+      const siblings = await db.query.manual.findMany({
+        where: eq(manual.categoryId, categoryRow.id),
+      });
+      const lastRank = siblings.map((m) => m.rank).sort().at(-1) ?? null;
       manualId = crypto.randomUUID();
       await db.insert(manual).values({
         id: manualId,
@@ -130,6 +134,7 @@ async function main() {
         slug: doc.slug,
         title: doc.title,
         subtitle: doc.subtitle,
+        rank: generateKeyBetween(lastRank, null),
       });
       console.log(`Created new manual "${doc.slug}" (${manualId}).`);
     }

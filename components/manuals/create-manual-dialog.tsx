@@ -13,20 +13,25 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ManualForm } from "./manual-form";
+import type { PlanLimits } from "@/lib/config/plan-limits";
 
 // Rendered on the category page for any signed-in member with an active
 // org, not just owner/admin — the server action is the real gate (a
 // member gets a permission error on submit), same deliberate choice
 // CreateCategoryDialog already makes. Precise role-based UI hiding is
-// Phase 4 scope.
+// Phase 4 scope. planLimits comes from the caller (a Server Component that
+// already resolved the active org), not fetched here — same reasoning as
+// EditManualDialog.
 export function CreateManualDialog({
   categoryId,
   categoryHref,
   isSnippetShaped,
+  planLimits,
 }: {
   categoryId: string;
   categoryHref: string;
   isSnippetShaped: boolean;
+  planLimits: PlanLimits;
 }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -49,6 +54,7 @@ export function CreateManualDialog({
           mode="create"
           categoryId={categoryId}
           isSnippetShaped={isSnippetShaped}
+          planLimits={planLimits}
           onSuccess={(result) => {
             setOpen(false);
             router.push(`${categoryHref}/${result.slug}`);

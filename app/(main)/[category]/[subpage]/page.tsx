@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { getCategoryBySlug, SNIPPET_CATEGORY_KEYS } from "@/lib/constants/categories";
 import { getManualBySlug } from "@/lib/actions/manual-actions";
+import { getOrgPlanLimits } from "@/lib/actions/get-org-plan-limits";
 import { ManualPage } from "@/components/manuals/manual-page";
 import { SnippetPage } from "@/components/snippet-page";
 import type { Manual, Snippet } from "@/lib/data/types";
@@ -50,10 +51,16 @@ export default async function SubpagePage({
   const dbManual = await getManualBySlug(categorySlug, subpage);
   if (!dbManual) notFound();
 
+  // dbManual only resolves at all once activeOrganizationId is set (see
+  // getManualBySlug -> getDbCategoryBySlug), so this is always a real org
+  // by the time we get here — the "?? ''" is just a type-safe fallback,
+  // not a real code path.
+  const planLimits = await getOrgPlanLimits(session.session.activeOrganizationId ?? "");
+
   if (category && SNIPPET_CATEGORY_KEYS.has(category.key)) {
     const dbSnippet = toSnippet(dbManual);
-    if (dbSnippet) return <SnippetPage snippet={dbSnippet} categorySlug={categorySlug} />;
+    if (dbSnippet) return <SnippetPage snippet={dbSnippet} categorySlug={categorySlug} planLimits={planLimits} />;
   }
 
-  return <ManualPage manual={dbManual} categorySlug={categorySlug} />;
+  return <ManualPage manual={dbManual} categorySlug={categorySlug} planLimits={planLimits} />;
 }

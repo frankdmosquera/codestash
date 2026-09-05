@@ -252,6 +252,60 @@ than deleted outright, since the "why" is still useful history):
   wired up. See `md-docs/ROLES-AND-BILLING-PLAN.md` for the full design
   this is heading toward, and `md-docs/roadmap/ROADMAP.md` for the
   build-out sequencing.
+- **Soft-delete shipped 2026-09-05** — `manual.deletedAt`, filtered out of
+  every read path; `deleteManualAction` is owner/admin only. The Delete
+  button shows regardless of the Edit flat-shape restriction, since
+  deleting doesn't touch a manual's internal structure the way editing
+  through the v1 form would.
+- **Per-document sharing shipped 2026-09-05** — an owner/admin can grant a
+  specific email view or edit access to exactly one manual, entirely
+  outside the organization: no membership, no seat, no visibility into
+  anything else in the workspace. New `manual_share` table (email +
+  permission), `requireManualShareAccess` as the access-check helper
+  (parallel to `requireOrgRole`, checks by email match rather than
+  `activeOrganizationId`), and `/shared/[manualId]` as the read path for
+  someone who isn't an org member at all — deliberately excluded from
+  `proxy.ts`'s blanket redirect, same reasoning as `/invite/accept`, so the
+  link works cold for someone with no session yet. `updateManualAction`
+  now accepts either an org owner/admin **or** a valid edit-level share, so
+  a shared-with-edit-permission outsider can actually save changes through
+  the same `EditManualDialog`/`ManualForm` everyone else uses.
+- **Found and fixed while browser-testing the above**: the manual edit
+  form's Save button had been silently broken since it was built (commit
+  `f43d5f5`, 2026-09-04) — `manual-form.tsx` validated the edit form against
+  `createManualValidationSchema`, which requires a non-empty `categoryId`,
+  but the edit form always defaults `categoryId` to `""` (it's never a
+  real field in edit mode). Every edit attempt failed client-side
+  validation silently — no error shown, since `categoryId` has no rendered
+  input to attach the error to — so the form just looked like it hung.
+  Fixed by dropping the `.min(1)` constraint on `categoryId`; the real
+  gate was always server-side anyway (`createManualAction` independently
+  verifies the category exists and belongs to the caller's org). This had
+  never been caught because nobody had browser-tested an actual edit
+  save before now — only create and delete had been verified end-to-end.
+- **Nesting + content-structure caps shipped 2026-09-05** — the create/edit
+  form no longer restricts sections to a flat list. Each row carries its
+  own `depth`, with Indent/Outdent controls and a live dotted-number
+  breadcrumb (1, 1.1, 1.2, 2, ...) recomputed as you edit; the schema
+  still requires exactly one block per section (text or code), that part
+  of v1's scope is unchanged. On save, `manual-actions.ts` converts the
+  flat depth-tagged list into real `parentId` rows via
+  `assignSectionParents` (a stack-walk — pop back to the last row whose
+  depth is less than the current one, whatever's left on top is the
+  parent — the same shape `scripts/lib/markdown-to-manual-sections.ts`
+  already used for markdown headings). `toEditableSections` was updated
+  to flatten an existing nested tree back into depth-tagged rows for
+  editing, rather than refusing whenever a manual has any children at all.
+  Three new caps went in alongside this (`lib/config/plan-limits.ts`,
+  full numbers in `ROLES-AND-BILLING-PLAN.md` #7): max sections per manual
+  (scales by plan — trial 10, C 20, B 50, A unlimited), max nesting depth
+  and max characters per section (same for every plan — legibility
+  ceilings, not something to pay more for). Depth and length are enforced
+  in the Zod schema itself since they're plan-independent constants;
+  section count is checked at runtime against `getOrgPlanLimits()` since
+  it depends on which org is submitting. All three show live in the form
+  (a running "N / limit sections" count, a per-bullet character counter)
+  so a cap is something you see coming, not a wall you hit at submit.
 
 `mastering-git` (the one hand-authored manual, formerly
 `lib/data/manuals/mastering-git.ts`, now DB-only) had picked up stray

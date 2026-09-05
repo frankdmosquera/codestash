@@ -23,11 +23,12 @@ export const config = {
   // Everything requires a session now — the catalog is no longer public
   // (see md-docs/ROLES-AND-BILLING-PLAN.md #5, reversed 2026-09-04).
   // Excluded: the auth API itself (sign-in/sign-up need it reachable
-  // while signed out), the sign-in/sign-up pages, and /invite/accept,
-  // which deliberately renders for signed-out visitors too so it can show
-  // its own "sign in to accept" state instead of being redirected before
-  // the page ever loads.
+  // while signed out), the sign-in/sign-up pages, /invite/accept, and
+  // /shared/[manualId] — all three deliberately render for signed-out
+  // visitors too so they can show their own "sign in to continue" state
+  // instead of being redirected before the page ever loads. A shared-doc
+  // link is meant to work for someone cold, with no session yet.
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|sign-in|sign-up|invite/accept).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|sign-in|sign-up|invite/accept|shared).*)",
   ],
 };

@@ -4,6 +4,7 @@ import { category } from "./category-schema";
 import { manual } from "./manual-schema";
 import { section } from "./section-schema";
 import { memberEditQuota } from "./member-edit-quota-schema";
+import { manualShare } from "./manual-share-schema";
 
 export const categoryRelations = relations(category, ({ one, many }) => ({
   organization: one(organization, {
@@ -27,6 +28,18 @@ export const manualRelations = relations(manual, ({ one, many }) => ({
     references: [user.id],
   }),
   sections: many(section),
+  shares: many(manualShare),
+}));
+
+export const manualShareRelations = relations(manualShare, ({ one }) => ({
+  manual: one(manual, {
+    fields: [manualShare.manualId],
+    references: [manual.id],
+  }),
+  invitedBy: one(user, {
+    fields: [manualShare.invitedByUserId],
+    references: [user.id],
+  }),
 }));
 
 export const sectionRelations = relations(section, ({ one }) => ({

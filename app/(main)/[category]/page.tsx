@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { getCategoryBySlug, isSnippetShapedSlug } from "@/lib/constants/categories";
 import { getResolvedItemsForCategory, getDbCategoryBySlug } from "@/lib/actions/manual-actions";
+import { getOrgPlanLimits } from "@/lib/actions/get-org-plan-limits";
 import { resolveIcon } from "@/lib/icon-map";
 import { SortableItemGrid } from "@/components/sortable-item-grid";
 import { CreateManualDialog } from "@/components/manuals/create-manual-dialog";
@@ -39,6 +40,7 @@ export default async function CategoryPage({
 
   const { category: categorySlug } = await params;
   const category = getCategoryBySlug(categorySlug);
+  const planLimits = await getOrgPlanLimits(session.session.activeOrganizationId ?? "");
 
   if (!category) {
     // No static counterpart — a genuinely custom, DB-only category. No
@@ -62,6 +64,7 @@ export default async function CategoryPage({
             categoryId={dbCategoryRow.id}
             categoryHref={`/${categorySlug}`}
             isSnippetShaped={isSnippetShapedSlug(categorySlug)}
+            planLimits={planLimits}
           />
         </div>
         {dbCategoryRow.description && (
@@ -94,6 +97,7 @@ export default async function CategoryPage({
             categoryId={dbCategoryRow.id}
             categoryHref={category.href}
             isSnippetShaped={isSnippetShapedSlug(categorySlug)}
+            planLimits={planLimits}
           />
         )}
       </div>

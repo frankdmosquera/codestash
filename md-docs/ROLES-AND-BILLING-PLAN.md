@@ -113,13 +113,19 @@ above, never sees any catalog content either. "Free" no longer means
 "read-only public access"; it means no access, full stop, until invited
 or paying.
 
-### 6. Free trials — new idea, 2026-09-04, not yet decided
+### 6. Free trials — raised 2026-09-04; tier limits locked 2026-09-05
 
 Raised while discussing what to build next: someone should be able to try
 Codestash as if they were a paying org, for a limited time, without
-handing over a card first. Nothing below is locked — this section exists
-so the idea doesn't get lost before Phase 2 actually starts, not to
-pre-decide it.
+handing over a card first. The mechanism/lifecycle questions below are
+still open — this section exists so the idea doesn't get lost before
+Phase 2 actually starts, not to pre-decide those. What *is* now locked:
+**`trial` is a real `PlanTier` in `lib/config/plan-limits.ts`**, with its
+own content-structure ceilings (see #7 below) — 2 categories, 10 sections
+per manual, no custom backgrounds. `trial`'s limits also stand in for
+`organization.plan`'s real-world default (`"free"`), since every org that
+exists today — including the real Codestash workspace — sits on that
+placeholder value until Phase 2 billing assigns it a real plan.
 
 - **Likely mechanism:** Stripe's own trial-period support
   (`trial_period_days` on a subscription) rather than a separate,
@@ -140,6 +146,27 @@ pre-decide it.
   above (#2's "paying creates an org," #5's "invited into an existing
   one") — a trial org still needs an owner, still needs to occupy a real
   seat, but exists before any payment has actually happened.
+
+### 7. Content-structure limits — locked 2026-09-05
+
+Three more ceilings added to the same `plan-limits.ts` config the seat/category
+numbers already live in, born out of designing nesting for manual sections:
+
+| Limit | Trial | Plan C | Plan B | Plan A |
+|---|---|---|---|---|
+| Max sections per manual | 10 | 20 | 50 | Unlimited |
+| Max nesting depth | 4 | 4 | 4 | 4 |
+| Max characters per section | 2,000 | 2,000 | 2,000 | 2,000 |
+
+**Only max-sections-per-manual scales by plan.** Nesting depth and
+characters-per-section are deliberately identical across every tier,
+trial included — they're legibility and render-performance ceilings, not
+something anyone should have to pay more to get more of. Max sections
+per manual is the one genuine "how much can this workspace hold" lever,
+same spirit as `maxCategories`. Enforcement is runtime (compare against
+`getPlanLimits(organization.plan)`), not baked into the Zod validation
+schemas, since the schemas can't know which org is submitting — same
+separation of concerns `requireOrgRole` already uses for permissions.
 
 ## What's missing to make this plan real
 

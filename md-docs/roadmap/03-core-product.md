@@ -2,11 +2,14 @@
 
 **Create/edit UI for manuals and snippets shipped 2026-09-04** — flat,
 single-block sections only for v1 (see the checklist below for the exact
-scope and its deliberate limitation). **Soft-delete shipped 2026-09-05**
-(see below). Icon/background pickers are still open. (The other original
-gap — public pages hardcoded to static content — is already closed, done
-ahead of schedule 2026-09-03 as part of the static-to-DB migration; see
-below.)
+scope and its deliberate limitation). **Soft-delete and nesting both
+shipped 2026-09-05** (see below); one block per section is still the
+limit — no lists/notes, no multiple blocks in one section. Icon/background
+pickers are still open. (The other original gap — public pages hardcoded
+to static content — is already closed, done ahead of schedule 2026-09-03
+as part of the static-to-DB migration; see below.) Per-document sharing
+also shipped 2026-09-05, outside this phase's original scope — see
+`SETUP.md`'s "Where things stand" for the full writeup.
 
 ## Locked decisions
 
@@ -31,6 +34,17 @@ below.)
 - [x] Build the manual/snippet create form (title, sections, code blocks)
       — done 2026-09-04, flat single-block sections only (no nesting, no
       multi-block sections); richer editing is future work, not this pass
+- [x] Add nesting to the create/edit form — done 2026-09-05: each section
+      row carries a `depth`, with Indent/Outdent controls and a live
+      dotted-number breadcrumb; `assignSectionParents` converts the flat
+      depth-tagged list into real `parentId` rows on save (same stack-walk
+      shape as `markdown-to-manual-sections.ts`'s heading-level parsing).
+      Multi-block sections (lists/notes, more than one block per section)
+      remain out of scope — this was depth only, not the whole v1
+      limitation. Came with three new caps in `plan-limits.ts` (max
+      sections per manual, max depth, max characters per section — see
+      `ROLES-AND-BILLING-PLAN.md` #7), shown live in the form so they're
+      seen coming rather than hit as a wall.
 - [x] Build edit — same form, pre-filled from the existing row — done
       2026-09-04, but only offered when the manual's real structure is
       actually flat-compatible (`lib/helpers/manual-edit-compat.ts`);

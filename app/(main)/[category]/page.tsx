@@ -1,16 +1,14 @@
-import Link from "next/link";
 import { headers } from "next/headers";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { ArrowRight } from "lucide-react";
 
 import { auth } from "@/lib/auth";
-import { Card } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { getCategoryBySlug } from "@/lib/constants/categories";
+import { getCategoryBySlug, isSnippetShapedSlug } from "@/lib/constants/categories";
 import { getResolvedItemsForCategory, getDbCategoryBySlug } from "@/lib/actions/manual-actions";
+import { getOrgPlanLimits } from "@/lib/actions/get-org-plan-limits";
 import { resolveIcon } from "@/lib/icon-map";
+import { SortableItemGrid } from "@/components/sortable-item-grid";
+import { CreateManualDialog } from "@/components/manuals/create-manual-dialog";
 import type { LucideIcon } from "lucide-react";
 
 // Takes the already-resolved icon component as a prop (same pattern as
@@ -32,48 +30,6 @@ export async function generateMetadata({
   return { title: dbCategoryRow ? dbCategoryRow.label : "Codestash" };
 }
 
-function ItemGrid({
-  items,
-}: {
-  items: Awaited<ReturnType<typeof getResolvedItemsForCategory>>;
-}) {
-  if (items.length === 0) {
-    return (
-      <p className="mt-12 text-neutral-400">
-        Nothing here yet — check back soon.
-      </p>
-    );
-  }
-  return (
-    <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {items.map((item) => (
-        <li key={item.id}>
-          <Card className="h-full justify-between gap-3 bg-neutral-900 p-5">
-            <div>
-              <h2 className="text-lg font-semibold text-white">{item.title}</h2>
-              {item.description && (
-                <p className="mt-1 line-clamp-2 text-sm text-neutral-400">
-                  {item.description}
-                </p>
-              )}
-            </div>
-            <Link
-              href={item.href}
-              className={cn(
-                buttonVariants({ variant: "secondary", size: "sm" }),
-                "w-fit gap-1.5",
-              )}
-            >
-              View
-              <ArrowRight className="size-3.5" />
-            </Link>
-          </Card>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 export default async function CategoryPage({
   params,
 }: PageProps<"/[category]">) {
@@ -84,6 +40,7 @@ export default async function CategoryPage({
 
   const { category: categorySlug } = await params;
   const category = getCategoryBySlug(categorySlug);
+  const planLimits = await getOrgPlanLimits(session.session.activeOrganizationId ?? "");
 
   if (!category) {
     // No static counterpart — a genuinely custom, DB-only category. No
@@ -96,36 +53,57 @@ export default async function CategoryPage({
 
     return (
       <div className="mx-auto max-w-5xl px-6 py-16">
-        <div className="flex items-center gap-2">
-          <CategoryIcon icon={resolveIcon(dbCategoryRow.icon)} />
-          <h1 className="text-3xl font-semibold tracking-tight text-white">
-            {dbCategoryRow.label}
-          </h1>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <CategoryIcon icon={resolveIcon(dbCategoryRow.icon)} />
+            <h1 className="text-3xl font-semibold tracking-tight text-white">
+              {dbCategoryRow.label}
+            </h1>
+          </div>
+          <CreateManualDialog
+            categoryId={dbCategoryRow.id}
+            categoryHref={`/${categorySlug}`}
+            isSnippetShaped={isSnippetShapedSlug(categorySlug)}
+            planLimits={planLimits}
+          />
         </div>
         {dbCategoryRow.description && (
           <p className="mt-2 max-w-xl text-neutral-300">{dbCategoryRow.description}</p>
         )}
-        <ItemGrid items={items} />
+        <SortableItemGrid items={items} />
       </div>
     );
   }
 
-  const items = await getResolvedItemsForCategory(categorySlug, category.href);
+  const [items, dbCategoryRow] = await Promise.all([
+    getResolvedItemsForCategory(categorySlug, category.href),
+    getDbCategoryBySlug(categorySlug),
+  ]);
   const Icon = category.icon;
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-16">
       <category.Background />
 
-      <div className="flex items-center gap-2">
-        <Icon className="size-6 text-teal-400" strokeWidth={1.75} />
-        <h1 className="text-3xl font-semibold tracking-tight text-white">
-          {category.label}
-        </h1>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Icon className="size-6 text-teal-400" strokeWidth={1.75} />
+          <h1 className="text-3xl font-semibold tracking-tight text-white">
+            {category.label}
+          </h1>
+        </div>
+        {dbCategoryRow && (
+          <CreateManualDialog
+            categoryId={dbCategoryRow.id}
+            categoryHref={category.href}
+            isSnippetShaped={isSnippetShapedSlug(categorySlug)}
+            planLimits={planLimits}
+          />
+        )}
       </div>
       <p className="mt-2 max-w-xl text-neutral-300">{category.description}</p>
 
-      <ItemGrid items={items} />
+      <SortableItemGrid items={items} />
     </div>
   );
 }

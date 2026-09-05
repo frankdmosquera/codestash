@@ -303,12 +303,18 @@ async function main() {
     return;
   }
 
+  const siblings = await db.query.manual.findMany({
+    where: eq(manual.categoryId, categoryRow.id),
+  });
+  const lastRank = siblings.map((m) => m.rank).sort().at(-1) ?? null;
+
   const manualId = crypto.randomUUID();
   await db.insert(manual).values({
     id: manualId,
     organizationId: org.id,
     categoryId: categoryRow.id,
     ownerId: owner.userId,
+    rank: generateKeyBetween(lastRank, null),
     slug: roadmapSlug,
     title: roadmapTitle,
     subtitle: roadmapSubtitle,

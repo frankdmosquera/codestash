@@ -1,0 +1,403 @@
+<title>Superadmin to Member</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#f4f6f4;
+    --surface:#ffffff;
+    --surface-2:#eef1ee;
+    --border:#d7dcd8;
+    --text:#12211c;
+    --text-muted:#57655e;
+    --accent:#0e8a7c;
+    --accent-contrast:#ffffff;
+    --platform:#92400e;
+    --zone-platform-bg:#fbead9;
+    --zone-platform-border:#d9a15a;
+    --proposed:#6d28d9;
+    --proposed-contrast:#ffffff;
+    --zone-proposed-bg:#f2eefc;
+    --zone-proposed-border:#b79af0;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0d1512;
+      --surface:#141f19;
+      --surface-2:#1a2620;
+      --border:#263832;
+      --text:#eef3ef;
+      --text-muted:#93a49b;
+      --accent:#2dd4bf;
+      --accent-contrast:#06201b;
+      --platform:#f2b544;
+      --zone-platform-bg:#241c10;
+      --zone-platform-border:#6b4a19;
+      --proposed:#b8a0f5;
+      --proposed-contrast:#1c1330;
+      --zone-proposed-bg:#1e1a2e;
+      --zone-proposed-border:#5b3fa0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0d1512;
+    --surface:#141f19;
+    --surface-2:#1a2620;
+    --border:#263832;
+    --text:#eef3ef;
+    --text-muted:#93a49b;
+    --accent:#2dd4bf;
+    --accent-contrast:#06201b;
+    --platform:#f2b544;
+    --zone-platform-bg:#241c10;
+    --zone-platform-border:#6b4a19;
+    --proposed:#b8a0f5;
+    --proposed-contrast:#1c1330;
+    --zone-proposed-bg:#1e1a2e;
+    --zone-proposed-border:#5b3fa0;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Public Sans', sans-serif;
+    line-height:1.55;
+  }
+  main{
+    max-width:1100px;
+    margin:0 auto;
+    padding:56px 24px 80px;
+    display:flex;
+    flex-direction:column;
+    gap:40px;
+  }
+  header{ display:flex; flex-direction:column; gap:14px; max-width:760px; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    letter-spacing:0.09em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    margin:0;
+  }
+  h1{
+    font-family:'Archivo', sans-serif;
+    font-weight:800;
+    font-size:clamp(2rem, 4vw, 2.75rem);
+    letter-spacing:-0.01em;
+    text-wrap:balance;
+    margin:0;
+  }
+  .intro{
+    margin:0;
+    max-width:62ch;
+    color:var(--text-muted);
+    font-size:1.05rem;
+  }
+
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:20px 32px;
+    padding:14px 18px;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    font-size:0.9rem;
+  }
+  .legend-item{ display:flex; align-items:center; gap:9px; color:var(--text-muted); }
+  .swatch{ width:13px; height:13px; border-radius:3px; flex:none; display:inline-block; }
+  .swatch-platform{ background:var(--zone-platform-bg); border:2px solid var(--platform); }
+  .swatch-accent{ background:var(--accent); }
+  .swatch-proposed{ background:var(--zone-proposed-bg); border:2px dashed var(--proposed); }
+
+  figure{ margin:0; display:flex; flex-direction:column; gap:14px; }
+  .diagram-scroll{
+    overflow-x:auto;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:var(--surface);
+    padding:8px;
+  }
+  svg.diagram{ display:block; width:1080px; height:auto; max-width:none; }
+  figcaption{
+    font-size:0.92rem;
+    color:var(--text-muted);
+    max-width:70ch;
+  }
+
+  .diagram .zone-platform{ fill:var(--zone-platform-bg); stroke:var(--zone-platform-border); stroke-width:1.5; }
+  .diagram .box{ fill:var(--surface); stroke:var(--border); stroke-width:1.5; }
+  .diagram .box-accent{ fill:var(--surface); stroke:var(--accent); stroke-width:2.25; }
+  .diagram .box-platform{ fill:var(--surface); stroke:var(--platform); stroke-width:2.25; }
+  .diagram .box-title{ font-family:'Archivo', sans-serif; font-weight:700; font-size:17px; fill:var(--text); }
+  .diagram .box-title-lg{ font-family:'Archivo', sans-serif; font-weight:800; font-size:19px; fill:var(--text); }
+  .diagram .box-mono{ font-family:'IBM Plex Mono', monospace; font-size:12.5px; fill:var(--text-muted); }
+  .diagram .box-mono-title{ font-family:'IBM Plex Mono', monospace; font-weight:500; font-size:15px; fill:var(--text); }
+  .diagram .box-note{ font-family:'Public Sans', sans-serif; font-style:italic; font-size:11.5px; fill:var(--text-muted); }
+  .diagram .box-list{ font-family:'Public Sans', sans-serif; font-size:12px; fill:var(--text); }
+  .diagram .band-label{ font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.08em; fill:var(--text-muted); text-transform:uppercase; }
+  .diagram .connector{ stroke:var(--text-muted); stroke-width:1.75; fill:none; }
+  .diagram .connector-platform{ stroke:var(--platform); stroke-width:1.75; stroke-dasharray:6 5; fill:none; }
+  .diagram .label-platform{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; fill:var(--platform); }
+  .diagram .chip-label{ font-family:'Archivo', sans-serif; font-weight:700; font-size:13px; text-anchor:middle; }
+  .diagram .chip-caption{ font-family:'Public Sans', sans-serif; font-size:10.5px; fill:var(--text-muted); text-anchor:middle; }
+  .diagram .chip-owner-rect{ fill:var(--accent); stroke:none; }
+  .diagram .chip-owner-label{ fill:var(--accent-contrast); }
+  .diagram .chip-admin-rect{ fill:none; stroke:var(--accent); stroke-width:2; }
+  .diagram .chip-outline-rect{ fill:none; stroke:var(--border); stroke-width:1.5; }
+  .diagram .chip-outline-label{ fill:var(--text); }
+  .diagram .zone-proposed{ fill:var(--zone-proposed-bg); stroke:var(--zone-proposed-border); stroke-width:1.5; stroke-dasharray:8 6; }
+  .diagram .box-proposed{ fill:var(--surface); stroke:var(--proposed); stroke-width:2; stroke-dasharray:7 5; }
+  .diagram .proposed-tag-rect{ fill:var(--proposed); }
+  .diagram .proposed-tag-text{ font-family:'IBM Plex Mono', monospace; font-size:9.5px; letter-spacing:0.06em; fill:var(--proposed-contrast); text-anchor:middle; }
+  #arrow-muted path{ fill:var(--text-muted); }
+  #arrow-platform path{ fill:var(--platform); }
+
+  section.notes, footer.code-refs{ display:flex; flex-direction:column; gap:14px; max-width:820px; }
+  section.notes h2, footer.code-refs h2{
+    font-family:'Archivo', sans-serif;
+    font-weight:800;
+    font-size:1.15rem;
+    margin:0;
+  }
+  section.notes ul{ margin:0; padding-left:1.2em; display:flex; flex-direction:column; gap:8px; color:var(--text); }
+  section.notes li::marker{ color:var(--text-muted); }
+
+  code{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.88em;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:0.05em 0.4em;
+  }
+
+  footer.code-refs dl{
+    margin:0;
+    display:grid;
+    grid-template-columns:minmax(150px,220px) 1fr;
+    row-gap:10px;
+    column-gap:18px;
+  }
+  footer.code-refs dl > div{ display:contents; }
+  footer.code-refs dt{ color:var(--text-muted); font-size:0.92rem; }
+  footer.code-refs dd{ margin:0; font-size:0.92rem; }
+  footer.code-refs dd code + code{ margin-left:6px; }
+
+  @media (max-width:640px){
+    footer.code-refs dl{ grid-template-columns:1fr; row-gap:4px; }
+    footer.code-refs dl > div{ display:flex; flex-direction:column; margin-bottom:6px; }
+  }
+</style>
+
+<main>
+  <header>
+    <p class="eyebrow">Codestash · access &amp; organization model</p>
+    <h1>Superadmin to Member</h1>
+    <p class="intro">
+      Four layers, start to finish: a platform-wide superadmin that sits outside
+      every workspace, two ways to actually get a session, how a workspace and
+      its members come into being, and what a role controls once you're in.
+      This is the flow as it actually runs today &mdash; stubs included &mdash;
+      plus two ideas on the table for later, kept clearly separate from what's real.
+    </p>
+  </header>
+
+  <div class="legend">
+    <span class="legend-item"><span class="swatch swatch-platform"></span>Platform-level &mdash; outside any single workspace</span>
+    <span class="legend-item"><span class="swatch swatch-accent"></span>Inside a workspace, once you have access</span>
+    <span class="legend-item"><span class="swatch swatch-proposed"></span>Proposed &mdash; not built, not fully decided</span>
+  </div>
+
+  <figure>
+    <div class="diagram-scroll">
+      <svg class="diagram" viewBox="0 0 1080 2020" width="1080" height="2020" role="img"
+        aria-label="A platform-wide superadmin sits outside every organization and can always delete one. A person gets a session via password or a console-logged email code. From there, either an owner creates a workspace at /onboarding, or an existing owner or admin invites someone by email who must accept with a matching email address to become a member. Owner and admin share the same permissions today, and every role — owner, admin, or member — occupies a paid seat. Every request afterward depends on an active organization being set, and the member's role determines whether they can manage content or only browse. Two further ideas are proposed but not built: sharing a single document with a non-member who never joins the workspace or uses a seat, and a free trial organization that gets admin-level rights but cannot invite members.">
+        <defs>
+          <marker id="arrow-muted" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z"/>
+          </marker>
+          <marker id="arrow-platform" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z"/>
+          </marker>
+        </defs>
+
+        <!-- Band 1: Platform -->
+        <rect class="zone-platform" x="60" y="40" width="960" height="150" rx="14"/>
+        <text class="band-label" x="90" y="66">Platform &mdash; outside every organization</text>
+        <rect class="box box-platform" x="390" y="82" width="300" height="76" rx="10"/>
+        <text class="box-title" x="540" y="110" text-anchor="middle">Superadmin</text>
+        <text class="box-mono" x="540" y="130" text-anchor="middle">adminRoles: ['superadmin']</text>
+        <text class="box-note" x="540" y="147" text-anchor="middle">flagged manually &mdash; no UI yet</text>
+
+        <path class="connector-platform" d="M690,120 H1000 V1630 H760" marker-end="url(#arrow-platform)"/>
+        <text class="label-platform" x="705" y="112">can always delete an org</text>
+
+        <!-- Band 2: Getting a session -->
+        <text class="band-label" x="60" y="222">Getting a session</text>
+
+        <rect class="box" x="110" y="240" width="400" height="110" rx="10"/>
+        <text class="box-title" x="310" y="272" text-anchor="middle">Password</text>
+        <text class="box-mono" x="310" y="294" text-anchor="middle">/sign-up &middot; /sign-in</text>
+
+        <rect class="box" x="570" y="240" width="400" height="110" rx="10"/>
+        <text class="box-title" x="770" y="272" text-anchor="middle">Email code</text>
+        <text class="box-mono" x="770" y="294" text-anchor="middle">/sign-in/otp</text>
+        <text class="box-note" x="770" y="314" text-anchor="middle">console-only today</text>
+
+        <path class="connector" d="M310,350 L540,392" marker-end="url(#arrow-muted)"/>
+        <path class="connector" d="M770,350 L540,392" marker-end="url(#arrow-muted)"/>
+
+        <rect class="box" x="300" y="392" width="480" height="78" rx="10"/>
+        <text class="box-title" x="540" y="424" text-anchor="middle">Signed in</text>
+        <text class="box-note" x="540" y="446" text-anchor="middle">no workspace yet</text>
+
+        <!-- Band 3: Organization lifecycle -->
+        <text class="band-label" x="60" y="507">Organization lifecycle</text>
+
+        <path class="connector" d="M540,470 L310,525" marker-end="url(#arrow-muted)"/>
+        <path class="connector" d="M540,470 L770,525" marker-end="url(#arrow-muted)"/>
+
+        <!-- left branch: owner path -->
+        <rect class="box" x="110" y="525" width="400" height="88" rx="10"/>
+        <text class="box-title" x="310" y="556" text-anchor="middle">Create workspace</text>
+        <text class="box-mono" x="310" y="578" text-anchor="middle">/onboarding</text>
+
+        <path class="connector" d="M310,613 L310,653" marker-end="url(#arrow-muted)"/>
+
+        <rect class="box" x="110" y="653" width="400" height="96" rx="10"/>
+        <text class="box-title" x="310" y="682" text-anchor="middle">Becomes the owner</text>
+        <text class="box-mono" x="310" y="703" text-anchor="middle">organization.create()</text>
+        <text class="box-note" x="310" y="722" text-anchor="middle">org + owner membership, atomically</text>
+
+        <path class="connector" d="M310,749 L320,941" marker-end="url(#arrow-muted)"/>
+
+        <!-- right branch: invite path -->
+        <rect class="box" x="570" y="525" width="400" height="96" rx="10"/>
+        <text class="box-title" x="770" y="556" text-anchor="middle">Invite by email</text>
+        <text class="box-mono" x="770" y="578" text-anchor="middle">/workspace/members</text>
+        <text class="box-note" x="770" y="598" text-anchor="middle">picks role: admin or member</text>
+
+        <path class="connector" d="M770,621 L770,661" marker-end="url(#arrow-muted)"/>
+
+        <rect class="box" x="570" y="661" width="400" height="88" rx="10"/>
+        <text class="box-title" x="770" y="692" text-anchor="middle">Invitation</text>
+        <text class="box-note" x="770" y="713" text-anchor="middle">pending, role already set</text>
+
+        <path class="connector" d="M770,749 L770,789" marker-end="url(#arrow-muted)"/>
+
+        <rect class="box" x="570" y="789" width="400" height="100" rx="10"/>
+        <text class="box-title" x="770" y="819" text-anchor="middle">Accept invite</text>
+        <text class="box-mono" x="770" y="840" text-anchor="middle">/invite/accept</text>
+        <text class="box-note" x="770" y="860" text-anchor="middle">session email must match, or 403</text>
+
+        <path class="connector" d="M770,889 L540,941" marker-end="url(#arrow-muted)"/>
+        <path class="connector" d="M770,889 L760,941" marker-end="url(#arrow-muted)"/>
+
+        <!-- Organization container -->
+        <rect class="box box-accent" x="140" y="941" width="800" height="200" rx="14"/>
+        <text class="box-title-lg" x="175" y="978">Organization</text>
+        <text class="box-mono" x="175" y="1000">organization + member rows</text>
+
+        <g>
+          <rect class="chip-owner-rect" x="225" y="1035" width="190" height="36" rx="18"/>
+          <text class="chip-label chip-owner-label" x="320" y="1058">owner</text>
+          <text class="chip-caption" x="320" y="1085">creator</text>
+        </g>
+        <g>
+          <rect class="chip-admin-rect" x="445" y="1035" width="190" height="36" rx="18"/>
+          <text class="chip-label chip-outline-label" x="540" y="1058">admin</text>
+          <text class="chip-caption" x="540" y="1085">invited, same access</text>
+        </g>
+        <g>
+          <rect class="chip-outline-rect" x="665" y="1035" width="190" height="36" rx="18"/>
+          <text class="chip-label chip-outline-label" x="760" y="1058">member</text>
+          <text class="chip-caption" x="760" y="1085">invited, limited</text>
+        </g>
+
+        <text class="box-note" x="540" y="1118" text-anchor="middle">owner &amp; admin share the same permissions today &mdash; all three roles are paid seats</text>
+
+        <path class="connector" d="M540,1141 L540,1201" marker-end="url(#arrow-muted)"/>
+
+        <!-- Band 4: runtime gate -->
+        <text class="band-label" x="60" y="1187">Every request, after that</text>
+
+        <rect class="box" x="300" y="1201" width="480" height="104" rx="10"/>
+        <text class="box-mono-title" x="540" y="1235" text-anchor="middle">session.activeOrganizationId</text>
+        <text class="box-note" x="540" y="1258" text-anchor="middle">no automatic fallback</text>
+        <text class="box-note" x="540" y="1276" text-anchor="middle">unset &rArr; every read comes back empty</text>
+
+        <path class="connector" d="M540,1305 L310,1360" marker-end="url(#arrow-muted)"/>
+        <path class="connector" d="M540,1305 L770,1360" marker-end="url(#arrow-muted)"/>
+
+        <!-- Band 5: what the role controls -->
+        <text class="band-label" x="60" y="1342">What the role actually controls</text>
+
+        <rect class="box" x="110" y="1360" width="400" height="150" rx="10"/>
+        <text class="box-title" x="310" y="1391" text-anchor="middle">Owner / Admin</text>
+        <text class="box-mono" x="310" y="1413" text-anchor="middle">requireOrgRole(['owner','admin'])</text>
+        <text class="box-list" x="310" y="1438" text-anchor="middle">categories &middot; manuals &middot; invites</text>
+        <text class="box-note" x="310" y="1460" text-anchor="middle">org:delete &mdash; superadmin only</text>
+
+        <rect class="box" x="570" y="1360" width="400" height="150" rx="10"/>
+        <text class="box-title" x="770" y="1391" text-anchor="middle">Member</text>
+        <text class="box-list" x="770" y="1416" text-anchor="middle">browse &amp; search only, today</text>
+        <text class="box-note" x="770" y="1438" text-anchor="middle">per-member edit quota planned</text>
+        <text class="box-note" x="770" y="1456" text-anchor="middle">(Phase 4, not enforced yet)</text>
+
+        <!-- Delete permission, where the platform connector lands -->
+        <rect class="box box-platform" x="320" y="1580" width="440" height="100" rx="10"/>
+        <text class="box-title" x="540" y="1612" text-anchor="middle">Delete organization</text>
+        <text class="box-mono" x="540" y="1634" text-anchor="middle">organization:delete</text>
+        <text class="box-note" x="540" y="1654" text-anchor="middle">removed from owner's role &mdash; superadmin only</text>
+
+        <!-- Proposed zone: new ideas, not built -->
+        <rect class="zone-proposed" x="60" y="1740" width="960" height="230" rx="14"/>
+        <text class="band-label" x="90" y="1766">Proposed &mdash; not built, not fully decided</text>
+
+        <rect class="box box-proposed" x="110" y="1786" width="400" height="150" rx="10"/>
+        <rect class="proposed-tag-rect" x="126" y="1774" width="100" height="22" rx="11"/>
+        <text class="proposed-tag-text" x="176" y="1789">PROPOSED</text>
+        <text class="box-title" x="310" y="1822" text-anchor="middle">Share a single doc</text>
+        <text class="box-list" x="310" y="1846" text-anchor="middle">scoped to one manual</text>
+        <text class="box-list" x="310" y="1866" text-anchor="middle">view or edit &mdash; not membership</text>
+        <text class="box-note" x="310" y="1888" text-anchor="middle">no seat used</text>
+
+        <rect class="box box-proposed" x="570" y="1786" width="400" height="150" rx="10"/>
+        <rect class="proposed-tag-rect" x="586" y="1774" width="100" height="22" rx="11"/>
+        <text class="proposed-tag-text" x="636" y="1789">PROPOSED</text>
+        <text class="box-title" x="770" y="1822" text-anchor="middle">Start a free trial</text>
+        <text class="box-list" x="770" y="1846" text-anchor="middle">time-limited admin rights</text>
+        <text class="box-list" x="770" y="1866" text-anchor="middle">can't invite members</text>
+        <text class="box-note" x="770" y="1888" text-anchor="middle">length, card-upfront &mdash; undecided</text>
+      </svg>
+    </div>
+    <figcaption>
+      How a person goes from having no account to being an owner, admin, or
+      member of a Codestash workspace &mdash; and where the platform-level
+      superadmin sits, permanently outside all of it.
+    </figcaption>
+  </figure>
+
+  <section class="notes">
+    <h2>Worth knowing</h2>
+    <ul>
+      <li>Email codes are real, expiring 6-digit OTPs &mdash; but <code>sendVerificationOTP</code> only logs them to the server console today. No email provider is wired up yet, so this path only works for whoever has terminal access.</li>
+      <li>Accepting an invite is enforced server-side, not just by the link: the signed-in session's email has to match the invitation's exactly, or better-auth returns a 403.</li>
+      <li>There's no fallback for an unset active organization. <code>use-auto-active-organization.ts</code> only auto-selects one when you belong to exactly one workspace &mdash; anyone in zero or several has to pick, or every DB-backed read just comes back empty.</li>
+    </ul>
+  </section>
+
+  <footer class="code-refs">
+    <h2>Where this lives in the code</h2>
+    <dl>
+      <div><dt>Superadmin</dt><dd><code>lib/auth.ts</code></dd></div>
+      <div><dt>Password / email-code sign-in</dt><dd><code>lib/auth.ts</code> &middot; <code>app/(auth)/sign-in</code></dd></div>
+      <div><dt>Create a workspace</dt><dd><code>app/(main)/onboarding</code></dd></div>
+      <div><dt>Invite &amp; accept</dt><dd><code>app/(main)/workspace/members</code> &middot; <code>app/(main)/invite/accept</code></dd></div>
+      <div><dt>Active-workspace gate</dt><dd><code>lib/hooks/use-auto-active-organization.ts</code></dd></div>
+      <div><dt>Role enforcement</dt><dd><code>lib/actions/require-org-role.ts</code></dd></div>
+    </dl>
+  </footer>
+</main>

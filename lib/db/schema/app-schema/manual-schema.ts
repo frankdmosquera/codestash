@@ -21,6 +21,14 @@ export const manual = pgTable(
     slug: text("slug").notNull(),
     title: text("title").notNull(),
     subtitle: text("subtitle"),
+    // Fractional-indexing rank, scoped per category (see category-schema.ts
+    // for the same pattern) — drag-and-drop reorders by changing just this
+    // column, never a stored position number.
+    rank: text("rank").notNull(),
+    // Soft-delete marker — null means active. A deleted manual's row (and
+    // its sections) stay in the DB, just excluded from every read path;
+    // there's no restore UI yet, but the data survives a misclick.
+    deletedAt: timestamp("deleted_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

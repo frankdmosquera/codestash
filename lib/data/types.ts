@@ -20,6 +20,7 @@ export type ManualSection = {
 };
 
 export type Manual = {
+  id: string;
   slug: string;
   title: string;
   subtitle: string;
@@ -31,6 +32,7 @@ export type Manual = {
 // just "one piece of copy-pasteable code with a title." Manuals are the one
 // category structurally different enough to need their own shape above.
 export type Snippet = {
+  id: string;
   slug: string;
   title: string;
   description?: string;

@@ -53,7 +53,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <CategoryOpenProvider>
-              <SortableCategoryList categories={ownCategories ?? []} />
+              <SortableCategoryList categories={ownCategories ?? []} organizationId={organization?.id} />
             </CategoryOpenProvider>
           </SidebarGroupContent>
         </SidebarGroup>

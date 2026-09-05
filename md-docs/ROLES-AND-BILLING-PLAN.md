@@ -113,6 +113,90 @@ above, never sees any catalog content either. "Free" no longer means
 "read-only public access"; it means no access, full stop, until invited
 or paying.
 
+### 6. Free trials — raised 2026-09-04; tier limits locked 2026-09-05
+
+Raised while discussing what to build next: someone should be able to try
+Codestash as if they were a paying org, for a limited time, without
+handing over a card first. The mechanism/lifecycle questions below are
+still open — this section exists so the idea doesn't get lost before
+Phase 2 actually starts, not to pre-decide those. What *is* now locked:
+**`trial` is a real `PlanTier` in `lib/config/plan-limits.ts`**, with its
+own content-structure ceilings (see #7 below) — 2 categories, 10 sections
+per manual, no custom backgrounds. `trial`'s limits also stand in for
+`organization.plan`'s real-world default (`"free"`), since every org that
+exists today — including the real Codestash workspace — sits on that
+placeholder value until Phase 2 billing assigns it a real plan.
+
+- **Likely mechanism:** Stripe's own trial-period support
+  (`trial_period_days` on a subscription) rather than a separate,
+  hand-rolled trial system — fits directly into Phase 2's already-locked
+  "Stripe Checkout + subscriptions" approach instead of building a second,
+  parallel path.
+- **Open — needs a decision before building:** does starting a trial
+  still require a card on file (common, reduces throwaway signups) or
+  truly nothing upfront (lower friction, more abuse-prone)?
+- **Open — needs a decision before building:** what happens at
+  expiration — hard lock (no access at all until they pay), downgrade to
+  a restricted read-only state, or a grace period before data becomes
+  inaccessible? Each implies different code in the Stripe webhook handler
+  Phase 2 already plans to build.
+- **Open — needs a decision before building:** trial length, and whether
+  it's the same for every plan (A/B/C) or varies.
+- This is a third org-creation path alongside the two already described
+  above (#2's "paying creates an org," #5's "invited into an existing
+  one") — a trial org still needs an owner, still needs to occupy a real
+  seat, but exists before any payment has actually happened.
+
+### 7. Content-structure limits — locked 2026-09-05, revised same day (main/total split, per-plan depth, aggregate character budget)
+
+Five ceilings live in the same `plan-limits.ts` config the seat/category
+numbers already live in, born out of designing nesting for manual sections:
+
+| Limit | Trial | Plan C | Plan B | Plan A |
+|---|---|---|---|---|
+| Max **main** sections per manual (top-level only) | 10 | 20 | 50 | Unlimited |
+| Max **total** sections per manual (every level combined) | 270 | 540 | 1,350 | Unlimited |
+| Max nesting depth | 4 | 6 | 8 | 10 |
+| Max characters per section (fixed, every plan) | 8,000 | 8,000 | 8,000 | 8,000 |
+| Max characters total per manual | 2,160,000 | 4,320,000 | 10,800,000 | Unlimited |
+
+**Main and total sections are deliberately independent, not one number.**
+A single "max sections" count (the original design) meant nesting at all
+quietly ate into how many distinct top-level topics a manual could
+cover — the two competed for the same budget. Splitting them means a
+manual can spend its total budget either on more top-level topics or on
+deeper structure under fewer of them, and nesting never costs you
+breadth. The total number is deliberately generous (main × depth³ at the
+original 3-per-level branching assumption, e.g. 10 × 3³ ≈ 270 for trial)
+— a ceiling on absolute complexity, not something a normal manual would
+realistically approach; **main** is the number that actually shapes
+everyday use.
+
+**Nesting depth now scales by plan** (revised 2026-09-05 — reversed from
+the original "same for everyone" call) — a real per-plan perk, not just a
+legibility constant anymore, though 4 levels stays the practical floor
+even on trial.
+
+**Characters work the same two-tier way as sections**: `maxCharsPerSection`
+(8,000) is a fixed, per-bullet hard ceiling for every plan — it stops one
+bullet from becoming the entire manual, which is exactly the failure mode
+a pure aggregate-only budget would reopen. `maxTotalCharsPerManual` is the
+plan-scaled aggregate on top of it (`maxCharsPerSection × maxTotalSectionsPerManual`
+for each tier), giving real flexibility *across* bullets — some longer,
+some shorter, up to the shared pool — without allowing it *within* one.
+Someone who genuinely has one thing that shouldn't be split (a long
+explanation, a full file) gets real room; nobody can spend the whole
+manual's budget on a single unreadable wall of text.
+
+Enforcement for all the plan-scaled numbers (main sections, total
+sections, depth, total characters) is runtime
+(`assertWithinSectionLimits` in `manual-actions.ts`, comparing against
+`getOrgPlanLimits(organization.plan)`), not baked into the Zod validation
+schemas, since the schemas can't know which org is submitting — same
+separation of concerns `requireOrgRole` already uses for permissions.
+Only `maxCharsPerSection`, the one number that's still identical for
+every plan, lives directly in the Zod schema.
+
 ## What's missing to make this plan real
 
 Not a wishlist of every detail — just what's actually load-bearing before

@@ -252,6 +252,73 @@ than deleted outright, since the "why" is still useful history):
   wired up. See `md-docs/ROLES-AND-BILLING-PLAN.md` for the full design
   this is heading toward, and `md-docs/roadmap/ROADMAP.md` for the
   build-out sequencing.
+- **Soft-delete shipped 2026-09-05** — `manual.deletedAt`, filtered out of
+  every read path; `deleteManualAction` is owner/admin only. The Delete
+  button shows regardless of the Edit flat-shape restriction, since
+  deleting doesn't touch a manual's internal structure the way editing
+  through the v1 form would.
+- **Per-document sharing shipped 2026-09-05** — an owner/admin can grant a
+  specific email view or edit access to exactly one manual, entirely
+  outside the organization: no membership, no seat, no visibility into
+  anything else in the workspace. New `manual_share` table (email +
+  permission), `requireManualShareAccess` as the access-check helper
+  (parallel to `requireOrgRole`, checks by email match rather than
+  `activeOrganizationId`), and `/shared/[manualId]` as the read path for
+  someone who isn't an org member at all — deliberately excluded from
+  `proxy.ts`'s blanket redirect, same reasoning as `/invite/accept`, so the
+  link works cold for someone with no session yet. `updateManualAction`
+  now accepts either an org owner/admin **or** a valid edit-level share, so
+  a shared-with-edit-permission outsider can actually save changes through
+  the same `EditManualDialog`/`ManualForm` everyone else uses.
+- **Found and fixed while browser-testing the above**: the manual edit
+  form's Save button had been silently broken since it was built (commit
+  `f43d5f5`, 2026-09-04) — `manual-form.tsx` validated the edit form against
+  `createManualValidationSchema`, which requires a non-empty `categoryId`,
+  but the edit form always defaults `categoryId` to `""` (it's never a
+  real field in edit mode). Every edit attempt failed client-side
+  validation silently — no error shown, since `categoryId` has no rendered
+  input to attach the error to — so the form just looked like it hung.
+  Fixed by dropping the `.min(1)` constraint on `categoryId`; the real
+  gate was always server-side anyway (`createManualAction` independently
+  verifies the category exists and belongs to the caller's org). This had
+  never been caught because nobody had browser-tested an actual edit
+  save before now — only create and delete had been verified end-to-end.
+- **Nesting + content-structure caps shipped 2026-09-05** — the create/edit
+  form no longer restricts sections to a flat list. Each row carries its
+  own `depth`, with Indent/Outdent controls and a live dotted-number
+  breadcrumb (1, 1.1, 1.2, 2, ...) recomputed as you edit; the schema
+  still requires exactly one block per section (text or code), that part
+  of v1's scope is unchanged. On save, `manual-actions.ts` converts the
+  flat depth-tagged list into real `parentId` rows via
+  `assignSectionParents` (a stack-walk — pop back to the last row whose
+  depth is less than the current one, whatever's left on top is the
+  parent — the same shape `scripts/lib/markdown-to-manual-sections.ts`
+  already used for markdown headings). `toEditableSections` was updated
+  to flatten an existing nested tree back into depth-tagged rows for
+  editing, rather than refusing whenever a manual has any children at all.
+  Five caps live in `lib/config/plan-limits.ts` now (full numbers in
+  `ROLES-AND-BILLING-PLAN.md` #7), revised same day from the original
+  three: max **main** sections per manual and max **total** sections are
+  independent on purpose, so nesting deeper never costs a manual its
+  top-level breadth (main counts only depth-0 rows, total counts every
+  row); max nesting depth now scales by plan too (trial 4, C 6, B 8, A
+  10 — reversed from the original "same for everyone" call); max
+  characters per section (8,000, fixed for every plan — the one number
+  still identical everywhere, a per-bullet legibility ceiling) is paired
+  with max total characters per manual (also plan-scaled — trial
+  2,160,000 up to unlimited on Plan A), an aggregate budget that lets
+  some bullets run longer than others without needing a bigger per-bullet
+  cap for everyone, while still stopping any single bullet from becoming
+  the whole manual. Only `maxCharsPerSection` lives directly in the Zod
+  schema, since it's the one plan-independent number; everything else
+  (main/total sections, depth, total characters) is checked at runtime
+  (`assertWithinSectionLimits` in `manual-actions.ts`) against
+  `getOrgPlanLimits()`, since those all depend on which org is
+  submitting. All five show live in the form — a graduated
+  muted/amber/red meter (not just a plain number) for both section counts
+  and both character counts, and a tooltip on each row's breadcrumb
+  number showing its nesting depth — so a cap is something you see
+  coming, not a wall you hit at submit.
 
 `mastering-git` (the one hand-authored manual, formerly
 `lib/data/manuals/mastering-git.ts`, now DB-only) had picked up stray

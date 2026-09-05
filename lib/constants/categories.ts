@@ -80,3 +80,21 @@ export const CATEGORY_LIST: CategoryConfig[] = Object.values(CATEGORIES);
 export function getCategoryBySlug(slug: string): CategoryConfig | undefined {
   return CATEGORY_LIST.find((category) => category.href === `/${slug}`);
 }
+
+// The 4 non-manual built-in categories store their content as a
+// single-section manual with one "code" block (see toSnippet in
+// [category]/[subpage]/page.tsx) — everything else ("manuals", and any
+// custom DB-only category) renders/authors as a full multi-section manual.
+// Shared between the subpage viewer and the manual create/edit form, which
+// both need the same answer to "is this category snippet-shaped."
+export const SNIPPET_CATEGORY_KEYS = new Set<CatalogCategoryKey>([
+  "hooks",
+  "helpers",
+  "blocks",
+  "aiInstructions",
+]);
+
+export function isSnippetShapedSlug(slug: string): boolean {
+  const category = getCategoryBySlug(slug);
+  return category !== undefined && SNIPPET_CATEGORY_KEYS.has(category.key);
+}

@@ -11,6 +11,7 @@ import { category, manual, section } from "@/lib/db/schema/app-schema";
 import { requireOrgRole } from "@/lib/actions/require-org-role";
 import { requireManualShareAccess } from "@/lib/actions/require-manual-share-access";
 import { getOrgPlanLimits } from "@/lib/actions/get-org-plan-limits";
+import type { PlanLimits } from "@/lib/config/plan-limits";
 import { assignSectionParents } from "@/lib/helpers/assign-section-parents";
 import { slugify } from "@/lib/utils";
 import {
@@ -117,6 +118,41 @@ function sectionInputToBlock(input: { kind: "text" | "code"; content: string }):
   return input.kind === "code" ? { type: "code", code: input.content } : { type: "p", text: input.content };
 }
 
+// Four independent checks, not one — nesting deeper should never cost a
+// manual its top-level breadth, and per-plan depth/character budgets are
+// no longer baked into the Zod schema now that they scale by plan (see
+// md-docs/ROLES-AND-BILLING-PLAN.md #7):
+//   - maxMainSectionsPerManual caps only depth-0 rows (how many distinct topics)
+//   - maxTotalSectionsPerManual caps every row combined (main + nested)
+//   - maxNestingDepth caps how deep any single row can go
+//   - maxTotalCharsPerManual caps the sum of every section's content —
+//     the aggregate flexibility on top of the fixed per-bullet
+//     maxCharsPerSection ceiling (already enforced by the Zod schema
+//     itself, since that one's the same for every plan)
+function assertWithinSectionLimits(
+  sections: { depth: number; content: string }[],
+  limits: Pick<
+    PlanLimits,
+    "maxMainSectionsPerManual" | "maxTotalSectionsPerManual" | "maxNestingDepth" | "maxTotalCharsPerManual"
+  >,
+) {
+  const mainCount = sections.filter((s) => s.depth === 0).length;
+  if (limits.maxMainSectionsPerManual !== null && mainCount > limits.maxMainSectionsPerManual) {
+    throw new Error(`This plan allows up to ${limits.maxMainSectionsPerManual} sections per manual`);
+  }
+  if (limits.maxTotalSectionsPerManual !== null && sections.length > limits.maxTotalSectionsPerManual) {
+    throw new Error(`This plan allows up to ${limits.maxTotalSectionsPerManual} bullets total per manual`);
+  }
+  const deepestDepth = Math.max(0, ...sections.map((s) => s.depth));
+  if (deepestDepth > limits.maxNestingDepth - 1) {
+    throw new Error(`This plan allows nesting up to ${limits.maxNestingDepth} levels deep`);
+  }
+  const totalChars = sections.reduce((sum, s) => sum + s.content.length, 0);
+  if (limits.maxTotalCharsPerManual !== null && totalChars > limits.maxTotalCharsPerManual) {
+    throw new Error(`This plan allows up to ${limits.maxTotalCharsPerManual.toLocaleString()} characters total per manual`);
+  }
+}
+
 // Inserts a flat, depth-tagged section list as real tree rows. Rank is
 // tracked per parent group (a Map keyed by parentIndex, `null` meaning
 // top-level) so siblings under the same parent get ordered ranks relative
@@ -148,8 +184,8 @@ async function insertSectionTree(manualId: string, sections: { title: string; ki
 // owner/admin only, same as category creation. Verifies the target
 // category actually belongs to the caller's org before writing — the
 // client only sends a categoryId, never trusted for authorization. Also
-// enforces the plan's maxSectionsPerManual — the one content-structure
-// limit that actually scales by plan (see md-docs/ROLES-AND-BILLING-PLAN.md #7);
+// enforces the plan's main/total section caps — the two content-structure
+// limits that actually scale by plan (see md-docs/ROLES-AND-BILLING-PLAN.md #7);
 // depth and per-section length are enforced by the Zod schema itself,
 // since those are the same for every plan.
 export async function createManualAction(input: CreateManualValidationInput) {
@@ -157,9 +193,7 @@ export async function createManualAction(input: CreateManualValidationInput) {
   const { categoryId, title, subtitle, sections } = createManualValidationSchema.parse(input);
 
   const limits = await getOrgPlanLimits(organizationId);
-  if (limits.maxSectionsPerManual !== null && sections.length > limits.maxSectionsPerManual) {
-    throw new Error(`This plan allows up to ${limits.maxSectionsPerManual} sections per manual`);
-  }
+  assertWithinSectionLimits(sections, limits);
 
   const categoryRow = await db.query.category.findFirst({
     where: and(eq(category.id, categoryId), eq(category.organizationId, organizationId)),
@@ -239,9 +273,7 @@ export async function updateManualAction(input: UpdateManualValidationInput) {
   }
 
   const limits = await getOrgPlanLimits(existingManual.organizationId);
-  if (limits.maxSectionsPerManual !== null && sectionInputs.length > limits.maxSectionsPerManual) {
-    throw new Error(`This plan allows up to ${limits.maxSectionsPerManual} sections per manual`);
-  }
+  assertWithinSectionLimits(sectionInputs, limits);
 
   await db.update(manual).set({ title, subtitle: subtitle || null }).where(eq(manual.id, manualId));
   await db.delete(section).where(eq(section.manualId, manualId));

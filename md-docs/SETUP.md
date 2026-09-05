@@ -296,16 +296,29 @@ than deleted outright, since the "why" is still useful history):
   already used for markdown headings). `toEditableSections` was updated
   to flatten an existing nested tree back into depth-tagged rows for
   editing, rather than refusing whenever a manual has any children at all.
-  Three new caps went in alongside this (`lib/config/plan-limits.ts`,
-  full numbers in `ROLES-AND-BILLING-PLAN.md` #7): max sections per manual
-  (scales by plan — trial 10, C 20, B 50, A unlimited), max nesting depth
-  and max characters per section (same for every plan — legibility
-  ceilings, not something to pay more for). Depth and length are enforced
-  in the Zod schema itself since they're plan-independent constants;
-  section count is checked at runtime against `getOrgPlanLimits()` since
-  it depends on which org is submitting. All three show live in the form
-  (a running "N / limit sections" count, a per-bullet character counter)
-  so a cap is something you see coming, not a wall you hit at submit.
+  Five caps live in `lib/config/plan-limits.ts` now (full numbers in
+  `ROLES-AND-BILLING-PLAN.md` #7), revised same day from the original
+  three: max **main** sections per manual and max **total** sections are
+  independent on purpose, so nesting deeper never costs a manual its
+  top-level breadth (main counts only depth-0 rows, total counts every
+  row); max nesting depth now scales by plan too (trial 4, C 6, B 8, A
+  10 — reversed from the original "same for everyone" call); max
+  characters per section (8,000, fixed for every plan — the one number
+  still identical everywhere, a per-bullet legibility ceiling) is paired
+  with max total characters per manual (also plan-scaled — trial
+  2,160,000 up to unlimited on Plan A), an aggregate budget that lets
+  some bullets run longer than others without needing a bigger per-bullet
+  cap for everyone, while still stopping any single bullet from becoming
+  the whole manual. Only `maxCharsPerSection` lives directly in the Zod
+  schema, since it's the one plan-independent number; everything else
+  (main/total sections, depth, total characters) is checked at runtime
+  (`assertWithinSectionLimits` in `manual-actions.ts`) against
+  `getOrgPlanLimits()`, since those all depend on which org is
+  submitting. All five show live in the form — a graduated
+  muted/amber/red meter (not just a plain number) for both section counts
+  and both character counts, and a tooltip on each row's breadcrumb
+  number showing its nesting depth — so a cap is something you see
+  coming, not a wall you hit at submit.
 
 `mastering-git` (the one hand-authored manual, formerly
 `lib/data/manuals/mastering-git.ts`, now DB-only) had picked up stray

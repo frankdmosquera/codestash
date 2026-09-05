@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { IndentDecrease, IndentIncrease, Plus, Trash2 } from "lucide-react";
 import { Controller, useFieldArray, useForm, useWatch, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -10,8 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { DialogClose, DialogFooter } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { createManualAction, updateManualAction } from "@/lib/actions/manual-actions";
-import { CONTENT_STRUCTURE_LIMITS, type PlanLimits } from "@/lib/config/plan-limits";
+import { MAX_CHARS_PER_SECTION, type PlanLimits } from "@/lib/config/plan-limits";
 import { cn } from "@/lib/utils";
 import {
   createManualValidationSchema,
@@ -21,8 +22,19 @@ import {
 
 const emptySection = (depth: number): ManualSectionInput => ({ title: "", kind: "text", content: "", depth });
 
-const MAX_DEPTH_INDEX = CONTENT_STRUCTURE_LIMITS.maxNestingDepth - 1; // depth is 0-indexed
-const MAX_CHARS = CONTENT_STRUCTURE_LIMITS.maxCharsPerSection;
+const MAX_CHARS = MAX_CHARS_PER_SECTION;
+
+// How many rows sit nested under this one, walking forward while depth
+// stays greater than the row's own — used to warn before a removal that
+// would silently take a whole subtree with it, not just the one row.
+function countDescendants(index: number, depths: number[]): number {
+  const depth = depths[index] ?? 0;
+  let count = 0;
+  for (let i = index + 1; i < depths.length && (depths[i] ?? 0) > depth; i++) {
+    count++;
+  }
+  return count;
+}
 
 // Dotted numbering ("1", "1.1", "1.2", "2", ...) computed live from each
 // row's depth, the same way buildSectionTree computes it server-side for
@@ -37,6 +49,32 @@ function computeSectionNumbers(depths: number[]): string[] {
   });
 }
 
+// A real traffic light — green while there's plenty of room, amber once
+// you're closing in on a cap, red once you're at (or over) it. A limit
+// you see coming rather than one you just hit. Used for every meter in
+// this form (section counts, character counts), same thresholds either way.
+function meterTone(ratio: number): { bar: string; text: string } {
+  if (ratio >= 1) return { bar: "bg-destructive", text: "text-destructive" };
+  if (ratio >= 0.8) return { bar: "bg-amber-500", text: "text-amber-600 dark:text-amber-400" };
+  return { bar: "bg-green-500", text: "text-green-600 dark:text-green-400" };
+}
+
+// Hand-rolled rather than components/ui/progress.tsx's Progress wrapper —
+// that component hardcodes its own ProgressIndicator internally with no
+// way to pass a className through for the graduated green/amber/red
+// coloring this needs. Same visual language (rounded-full, bg-muted
+// track) so it still reads as "the app's progress bar," just built by
+// hand for the one thing the wrapper doesn't expose, and sized up from a
+// first pass that was too subtle to notice at a glance.
+function Meter({ ratio, className }: { ratio: number; className?: string }) {
+  const pct = Math.min(100, Math.max(0, ratio * 100));
+  return (
+    <div className={cn("h-2.5 shrink-0 overflow-hidden rounded-full bg-muted", className)}>
+      <div className={cn("h-full rounded-full transition-all", meterTone(ratio).bar)} style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
 // Split out so `useWatch` (the safe, subscription-based way to read
 // another field's live value) has a stable component to attach to —
 // calling form.watch() inline during render isn't compiler-memoizable
@@ -45,6 +83,7 @@ function ManualSectionRow({
   control,
   index,
   number,
+  maxNestingDepth,
   canIndent,
   canOutdent,
   onIndent,
@@ -55,6 +94,7 @@ function ManualSectionRow({
   control: Control<CreateManualValidationInput>;
   index: number;
   number: string;
+  maxNestingDepth: number;
   canIndent: boolean;
   canOutdent: boolean;
   onIndent: () => void;
@@ -67,13 +107,24 @@ function ManualSectionRow({
 
   return (
     <div className="space-y-2 rounded-lg border border-input p-3" style={{ marginLeft: depth * 20 }}>
-      <div className="flex items-center gap-2">
-        <span className="w-10 shrink-0 text-xs tabular-nums text-muted-foreground">{number}</span>
+      <div className="flex flex-wrap items-center gap-2">
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <span className="w-8 shrink-0 cursor-default text-xs tabular-nums text-muted-foreground" />
+            }
+          >
+            {number}
+          </TooltipTrigger>
+          <TooltipContent>
+            Nested {depth + 1} of {maxNestingDepth} levels
+          </TooltipContent>
+        </Tooltip>
         <Controller
           name={`sections.${index}.title`}
           control={control}
           render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid} className="flex-1">
+            <Field data-invalid={fieldState.invalid} className="min-w-40 flex-1">
               <Input {...field} placeholder="Section title" />
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
             </Field>
@@ -83,7 +134,7 @@ function ManualSectionRow({
           name={`sections.${index}.kind`}
           control={control}
           render={({ field }) => (
-            <select {...field} className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm">
+            <select {...field} className="h-9 shrink-0 rounded-lg border border-input bg-transparent px-2 text-sm">
               <option value="text">Text</option>
               <option value="code">Code</option>
             </select>
@@ -92,22 +143,24 @@ function ManualSectionRow({
         <Button
           type="button"
           variant="ghost"
-          size="sm"
+          size="icon-sm"
+          className="text-red-600 hover:bg-red-500/10 hover:text-red-700 disabled:text-muted-foreground dark:text-red-400 dark:hover:text-red-300"
           aria-label="Outdent (move up a level)"
           disabled={!canOutdent}
           onClick={onOutdent}
         >
-          Outdent
+          <IndentDecrease className="size-4" />
         </Button>
         <Button
           type="button"
           variant="ghost"
-          size="sm"
+          size="icon-sm"
+          className="text-green-600 hover:bg-green-500/10 hover:text-green-700 disabled:text-muted-foreground dark:text-green-400 dark:hover:text-green-300"
           aria-label="Indent (nest under the section above)"
           disabled={!canIndent}
           onClick={onIndent}
         >
-          Indent
+          <IndentIncrease className="size-4" />
         </Button>
         <Button
           type="button"
@@ -130,20 +183,18 @@ function ManualSectionRow({
               placeholder="Paste your text or code here"
               className={kind === "code" ? "min-h-32 font-mono text-sm" : "min-h-24"}
             />
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
               {fieldState.invalid ? (
                 <FieldError errors={[fieldState.error]} />
               ) : (
                 <span />
               )}
-              <span
-                className={cn(
-                  "text-xs tabular-nums text-muted-foreground",
-                  field.value.length > MAX_CHARS && "text-destructive",
-                )}
-              >
-                {field.value.length} / {MAX_CHARS}
-              </span>
+              <div className="ml-auto flex shrink-0 items-center gap-2">
+                <Meter ratio={field.value.length / MAX_CHARS} className="w-20" />
+                <span className={cn("text-xs tabular-nums", meterTone(field.value.length / MAX_CHARS).text)}>
+                  {field.value.length} / {MAX_CHARS}
+                </span>
+              </div>
             </div>
           </Field>
         )}
@@ -203,8 +254,27 @@ export function ManualForm(props: ManualFormProps) {
   const depths = watchedSections?.map((s) => s.depth ?? 0) ?? [];
   const numbers = computeSectionNumbers(depths);
 
-  const maxSections = planLimits.maxSectionsPerManual;
-  const atSectionLimit = maxSections !== null && fields.length >= maxSections;
+  // Independent on purpose (see plan-limits.ts) — nesting deeper never
+  // costs top-level breadth. mainCount only counts depth-0 rows;
+  // fields.length (used for the total check) counts every row.
+  const mainCount = depths.filter((d) => d === 0).length;
+  const maxMain = planLimits.maxMainSectionsPerManual;
+  const maxTotal = planLimits.maxTotalSectionsPerManual;
+  const atMainLimit = maxMain !== null && mainCount >= maxMain;
+  const atTotalLimit = maxTotal !== null && fields.length >= maxTotal;
+
+  // "Add section" inherits the last row's depth (see the append() call
+  // below) — only actually costs a main-bullet slot when that depth is 0.
+  const nextAddDepth = depths.at(-1) ?? 0;
+  const addBlockedByMain = nextAddDepth === 0 && atMainLimit;
+  const addDisabled = atTotalLimit || addBlockedByMain;
+
+  // The aggregate flexibility on top of MAX_CHARS_PER_SECTION's fixed
+  // per-bullet ceiling — some bullets can run longer than others, up to
+  // this shared budget, rather than every bullet being capped the same.
+  const totalChars = watchedSections?.reduce((sum, s) => sum + (s.content?.length ?? 0), 0) ?? 0;
+  const maxTotalChars = planLimits.maxTotalCharsPerManual;
+  const atTotalCharsLimit = maxTotalChars !== null && totalChars > maxTotalChars;
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: async (values: CreateManualValidationInput) => {
@@ -225,6 +295,7 @@ export function ManualForm(props: ManualFormProps) {
   });
 
   return (
+    <TooltipProvider>
     <form onSubmit={form.handleSubmit((values) => mutate(values))} className="space-y-4">
       <Controller
         name="title"
@@ -268,28 +339,74 @@ export function ManualForm(props: ManualFormProps) {
         />
       ) : (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <FieldLabel>Sections</FieldLabel>
-            <span className="text-xs tabular-nums text-muted-foreground">
-              {fields.length}{maxSections !== null ? ` / ${maxSections}` : ""} sections
-            </span>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <div className="flex items-center gap-2">
+                {maxMain !== null && <Meter ratio={mainCount / maxMain} className="w-16" />}
+                <span
+                  className={cn(
+                    "text-xs tabular-nums",
+                    maxMain !== null ? meterTone(mainCount / maxMain).text : "text-muted-foreground",
+                  )}
+                >
+                  {mainCount}{maxMain !== null ? `/${maxMain}` : ""} sections
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {maxTotal !== null && <Meter ratio={fields.length / maxTotal} className="w-16" />}
+                <span
+                  className={cn(
+                    "text-xs tabular-nums",
+                    maxTotal !== null ? meterTone(fields.length / maxTotal).text : "text-muted-foreground",
+                  )}
+                >
+                  {fields.length}{maxTotal !== null ? `/${maxTotal}` : ""} bullets
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {maxTotalChars !== null && <Meter ratio={totalChars / maxTotalChars} className="w-16" />}
+                <span
+                  className={cn(
+                    "text-xs tabular-nums",
+                    maxTotalChars !== null ? meterTone(totalChars / maxTotalChars).text : "text-muted-foreground",
+                  )}
+                >
+                  {totalChars.toLocaleString()}{maxTotalChars !== null ? `/${maxTotalChars.toLocaleString()}` : ""} chars
+                </span>
+              </div>
+            </div>
           </div>
           {fields.map((sectionField, index) => {
             const depth = depths[index] ?? 0;
             const previousDepth = index > 0 ? (depths[index - 1] ?? 0) : -1;
-            const canIndent = index > 0 && depth < previousDepth + 1 && depth < MAX_DEPTH_INDEX;
-            const canOutdent = depth > 0;
+            const canIndent =
+              index > 0 && depth < previousDepth + 1 && depth < planLimits.maxNestingDepth - 1;
+            const outdentBlockedByMain = depth === 1 && atMainLimit;
+            const canOutdent = depth > 0 && !outdentBlockedByMain;
             return (
               <ManualSectionRow
                 key={sectionField.id}
                 control={form.control}
                 index={index}
                 number={numbers[index] ?? ""}
+                maxNestingDepth={planLimits.maxNestingDepth}
                 canIndent={canIndent}
                 canOutdent={canOutdent}
                 onIndent={() => form.setValue(`sections.${index}.depth`, depth + 1)}
                 onOutdent={() => form.setValue(`sections.${index}.depth`, depth - 1)}
-                onRemove={() => remove(index)}
+                onRemove={() => {
+                  const descendantCount = countDescendants(index, depths);
+                  if (descendantCount > 0) {
+                    const ok = window.confirm(
+                      `This section has ${descendantCount} nested item${descendantCount === 1 ? "" : "s"} under it. Delete it and everything nested inside?`,
+                    );
+                    if (!ok) return;
+                    remove(Array.from({ length: descendantCount + 1 }, (_, i) => index + i));
+                  } else {
+                    remove(index);
+                  }
+                }}
                 canRemove={fields.length > 1}
               />
             );
@@ -299,29 +416,38 @@ export function ManualForm(props: ManualFormProps) {
               type="button"
               variant="outline"
               size="sm"
-              disabled={atSectionLimit}
-              onClick={() => append(emptySection(depths.at(-1) ?? 0))}
+              disabled={addDisabled}
+              onClick={() => append(emptySection(nextAddDepth))}
             >
               <Plus className="size-4" />
               Add section
             </Button>
-            {atSectionLimit && (
+            {addDisabled && (
               <span className="text-xs text-muted-foreground">
-                This plan allows up to {maxSections} sections per manual
+                {atTotalLimit
+                  ? `This plan allows up to ${maxTotal} bullets total`
+                  : `This plan allows up to ${maxMain} sections — nest under an existing one instead`}
               </span>
             )}
           </div>
         </div>
       )}
 
+      {atTotalCharsLimit && !isSnippetShaped && (
+        <p className="text-sm text-destructive">
+          This plan allows up to {maxTotalChars?.toLocaleString()} characters total per manual — trim some
+          content before saving.
+        </p>
+      )}
       {error && <p className="text-sm text-destructive">{error.message}</p>}
 
       <DialogFooter>
         <DialogClose render={<Button type="button" variant="outline" />}>Cancel</DialogClose>
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" disabled={isPending || atTotalCharsLimit}>
           {isPending ? "Saving..." : mode === "create" ? "Create" : "Save"}
         </Button>
       </DialogFooter>
     </form>
+    </TooltipProvider>
   );
 }

@@ -19,7 +19,7 @@ export function ManualPage({
   categorySlug: string;
   planLimits: PlanLimits;
 }) {
-  const editableSections = toEditableSections(manual.sections);
+  const editableSections = toEditableSections(manual.sections, planLimits.maxNestingDepth);
 
   return (
     <ManualPageClient

@@ -41,10 +41,15 @@ also shipped 2026-09-05, outside this phase's original scope — see
       shape as `markdown-to-manual-sections.ts`'s heading-level parsing).
       Multi-block sections (lists/notes, more than one block per section)
       remain out of scope — this was depth only, not the whole v1
-      limitation. Came with three new caps in `plan-limits.ts` (max
-      sections per manual, max depth, max characters per section — see
-      `ROLES-AND-BILLING-PLAN.md` #7), shown live in the form so they're
-      seen coming rather than hit as a wall.
+      limitation. Came with five caps in `plan-limits.ts`, revised same
+      day (max main sections and max total sections — independent, so
+      nesting never costs top-level breadth; max depth, now scaled by
+      plan too — trial 4, C 6, B 8, A 10; max characters per section,
+      fixed at 8,000 for every plan; max characters total per manual, a
+      plan-scaled aggregate budget on top of it — see
+      `ROLES-AND-BILLING-PLAN.md` #7), shown live as graduated
+      muted/amber/red meters and a depth tooltip, so they're seen coming
+      rather than hit as a wall.
 - [x] Build edit — same form, pre-filled from the existing row — done
       2026-09-04, but only offered when the manual's real structure is
       actually flat-compatible (`lib/helpers/manual-edit-compat.ts`);

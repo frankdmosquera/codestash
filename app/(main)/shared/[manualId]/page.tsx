@@ -73,7 +73,9 @@ export default async function SharedManualPage({
   }
 
   const editableSections =
-    sharedManual.permission === "edit" ? toEditableSections(sharedManual.sections) : undefined;
+    sharedManual.permission === "edit"
+      ? toEditableSections(sharedManual.sections, sharedManual.planLimits.maxNestingDepth)
+      : undefined;
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">

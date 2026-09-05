@@ -1,12 +1,13 @@
 import { z } from "zod";
-import { CONTENT_STRUCTURE_LIMITS } from "@/lib/config/plan-limits";
+import { MAX_CHARS_PER_SECTION } from "@/lib/config/plan-limits";
 
-// A generous, plan-independent technical ceiling — not the real limit (that's
-// PLAN_LIMITS[plan].maxSectionsPerManual, checked at runtime in the action
-// since Zod can't know which org is submitting), just a sanity bound so a
-// malformed or abusive request can't ask the server to insert an absurd
-// number of rows in one call.
+// Generous, plan-independent technical ceilings — not the real limits
+// (those are PLAN_LIMITS[plan]'s section/depth counts, checked at runtime
+// in the action since Zod can't know which org is submitting), just sanity
+// bounds so a malformed or abusive request can't ask the server to insert
+// an absurd number of rows, or nest absurdly deep, in one call.
 const ABSOLUTE_MAX_SECTIONS = 500;
+const ABSOLUTE_MAX_DEPTH_INDEX = 19; // depth is 0-indexed; the highest real plan cap today is 10 (Plan A)
 
 // Sections are a flat list carrying their own nesting depth (0 = top level),
 // not a nested structure — the server converts depth into real parentId
@@ -14,9 +15,12 @@ const ABSOLUTE_MAX_SECTIONS = 500;
 // scripts/lib/markdown-to-manual-sections.ts's heading-level walk, just
 // fed an explicit depth instead of counting "#" characters). One section =
 // one block still — either a paragraph of text or a single code snippet,
-// never both. maxNestingDepth/maxCharsPerSection are the same for every
-// plan (legibility/render-performance ceilings, not a paid feature) so they
-// go straight into the schema; see md-docs/ROLES-AND-BILLING-PLAN.md #7.
+// never both. maxCharsPerSection is the same for every plan (a per-bullet
+// legibility ceiling, not a paid feature) so it goes straight into the
+// schema; maxNestingDepth now scales by plan (see
+// md-docs/ROLES-AND-BILLING-PLAN.md #7), so depth only gets the generous
+// absolute ceiling here — the real per-plan bound is enforced in
+// manual-actions.ts's assertWithinSectionLimits.
 export const manualSectionValidationSchema = z.object({
   title: z.string().trim().min(1, "Required"),
   kind: z.enum(["text", "code"]),
@@ -25,14 +29,10 @@ export const manualSectionValidationSchema = z.object({
     .trim()
     .min(1, "Required")
     .max(
-      CONTENT_STRUCTURE_LIMITS.maxCharsPerSection,
-      `Keep it under ${CONTENT_STRUCTURE_LIMITS.maxCharsPerSection} characters — split long content into a nested section instead`,
+      MAX_CHARS_PER_SECTION,
+      `Keep it under ${MAX_CHARS_PER_SECTION} characters — split long content into a nested section instead`,
     ),
-  depth: z
-    .number()
-    .int()
-    .min(0)
-    .max(CONTENT_STRUCTURE_LIMITS.maxNestingDepth - 1, "Nested too deep"),
+  depth: z.number().int().min(0).max(ABSOLUTE_MAX_DEPTH_INDEX, "Nested too deep"),
 });
 
 export type ManualSectionInput = z.infer<typeof manualSectionValidationSchema>;

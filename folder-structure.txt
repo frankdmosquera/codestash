@@ -11,9 +11,11 @@ codestash/
 │   ├── SETUP.md                       # practical "get it running" guide, kept in sync as the project evolves
 │   ├── RULES.md                       # project-specific conventions on top of the global CLAUDE.md
 │   ├── ROLES-AND-BILLING-PLAN.md      # org/role/plan design — agreed direction, not yet built
-│   ├── ROADMAP.md                     # phased build-out plan, "you are here" tracking — the only
-│   │                                  # one of this family auto-@imported into every session
 │   └── roadmap/
+│       ├── ROADMAP.md                 # phased build-out plan, "you are here" tracking — the only
+│       │                              # one of this family auto-@imported into every session; moved
+│       │                              # in here 2026-09-04 so the index sits with its own detail
+│       │                              # files instead of one level up on its own
 │       ├── 00-stabilize.md            # ...through 06-scale-readiness.md — one file per phase,
 │       └── ...                        # read on demand, not auto-loaded
 ├── drizzle.config.ts
@@ -38,7 +40,7 @@ codestash/
 │   │       └── page.tsx
 │   └── (main)/                       # everything else, wrapped in the sidebar shell
 │       ├── layout.tsx
-│       ├── page.tsx
+│       ├── page.tsx                  # protected: server-verifies session, redirects if none
 │       ├── onboarding/
 │       │   └── page.tsx              # protected: server-verifies session, redirects if none
 │       ├── workspace/
@@ -48,9 +50,9 @@ codestash/
 │       │   └── accept/
 │       │       └── page.tsx          # NOT proxy-protected — shows "sign in to accept" itself
 │       └── [category]/
-│           ├── page.tsx
+│           ├── page.tsx              # protected: server-verifies session, redirects if none
 │           └── [subpage]/
-│               └── page.tsx
+│               └── page.tsx          # protected: server-verifies session, redirects if none
 │
 ├── components/
 │   ├── auth/
@@ -63,10 +65,11 @@ codestash/
 │   │   ├── workspace-members.tsx     # useActiveOrganization(): members + pending invites
 │   │   └── accept-invitation.tsx     # signed-out / wrong-email / accept-or-decline states
 │   ├── sidebar/                       # replaced the old navbar/ (header) entirely — 100% DB-backed,
-│   │   │                              # no static fallback left anywhere in this group
+│   │   │                              # no static fallback left anywhere in this group, and no
+│   │   │                              # signed-out state to handle — every route requires a session
 │   │   ├── app-sidebar.tsx           # "use client" — sortable DB categories for the caller's own
-│   │   │                              # active org, else a read-only DB list from the public org
-│   │   │                              # (signed out, or signed in with no active workspace)
+│   │   │                              # active org, always (an empty org shows an empty list, never
+│   │   │                              # another org's categories — see category-actions.ts)
 │   │   ├── sortable-category-list.tsx # dnd-kit: drag handle, optimistic reorder, persists via
 │   │   │                              # reorderCategoryAction (fractional-indexing rank)
 │   │   ├── workspace-nav-item.tsx    # Create workspace, or org name expanded to Members (defaultOpen)
@@ -100,19 +103,23 @@ codestash/
 │   ├── utils.ts                       # cn() + slugify()
 │   ├── icon-map.ts                   # icon name (string) → LucideIcon — small curated set for now;
 │   │                                  # full icon-picker step needs a different (lazy) resolution strategy
-│   ├── actions/                       # all "use server" — reads fall back to the public org
-│   │   │                              # (getPublicOrganizationId) when there's no session, so the
-│   │   │                              # catalog is never gated behind being signed in; writes still
-│   │   │                              # require a real active-org session, unaffected by that fallback
-│   │   ├── public-organization.ts    # getPublicOrganizationId() — the one real org, until Phase 2
-│   │   │                              # multi-tenancy makes "which org is public" a real question
-│   │   ├── category-actions.ts       # getCategoriesForActiveOrg (own org), getPublicCategories
-│   │   │                              # (read-only, public-org fallback), reorderCategoryAction
-│   │   │                              # (verifies org ownership before writing — see its comment)
+│   ├── actions/                       # all "use server" — every route requires a session
+│   │   │                              # (enforced in proxy.ts + a per-page server-verified check),
+│   │   │                              # so every read/write here is scoped to the caller's own
+│   │   │                              # activeOrganizationId, no public/signed-out fallback exists
+│   │   │                              # (public-organization.ts was deleted 2026-09-04)
+│   │   ├── category-actions.ts       # getCategoriesForActiveOrg, reorderCategoryAction +
+│   │   │                              # createCategoryAction (both owner/admin only via
+│   │   │                              # requireOrgRole — verify org ownership before writing)
 │   │   ├── manual-actions.ts         # getManualBySlug, getManualsForCategory, getDbCategoryBySlug,
 │   │   │                              # getResolvedItemsForCategory, getSearchableCatalogItems —
 │   │   │                              # every subpage/category-page/search read, all DB-only now
+│   │   ├── require-org-role.ts       # requireOrgRole(allowedRoles) — the one reusable permission
+│   │   │                              # check every org-scoped write calls first
 │   │   └── workspace-actions.ts
+│   ├── config/
+│   │   └── plan-limits.ts            # PLAN_LIMITS keyed A/B/C: maxCategories, customBackgrounds,
+│   │                                  # seat-pricing curve — locked numbers, no checkout math (Phase 2)
 │   ├── hooks/
 │   │   └── use-auto-active-organization.ts # Better Auth has no fallback for an unset
 │   │                                  # session.activeOrganizationId — this auto-selects when a
@@ -167,20 +174,38 @@ codestash/
 │   │                                  # after their source data is gone — see md-docs/roadmap/
 │   │                                  # 01-foundations.md's "stop creating state by hand" principle;
 │   │                                  # a script whose only import was a now-deleted static file gets
-│   │                                  # deleted too, since it can never run again either way
+│   │                                  # deleted too, since it can never run again either way. Every
+│   │                                  # script that creates a real user/org/membership goes through
+│   │                                  # better-auth's own APIs (signUpEmail/addMember/
+│   │                                  # createOrganization), never a raw insert.
+│   ├── lib/
+│   │   └── markdown-to-manual-sections.ts # parseMarkdownToSections(): the shared parser both
+│   │                                  # update-*.ts scripts below use to read a real .md file and
+│   │                                  # turn it into the manual/section block tree — added
+│   │                                  # 2026-09-04 so those scripts stop hand-duplicating content
+│   │                                  # that drifts out of sync with the real files
 │   ├── seed-codestash-category.ts    # one-time: seeded the 5 built-in categories for the real org
 │   ├── seed-codestash-owner-membership.ts # one-time fix: added the owner's missing `member` row
 │   │                                  # (a raw DB insert had skipped it — broke sidebar drag-and-drop)
-│   ├── seed-doc-family-manuals.ts    # one-time: first seed of STORY.md/SETUP.md/ROLES-AND-BILLING-PLAN.md
-│   │                                  # as the "codestash" category's in-app manuals — no-ops if they exist
-│   ├── update-doc-family-manuals.ts  # re-runnable: replaces those 3 manuals' section trees — re-run
-│   │                                  # whenever STORY.md/SETUP.md/ROLES-AND-BILLING-PLAN.md change
-│   ├── seed-roadmap-manual.ts        # one-time: first seed of ROADMAP.md as the "Roadmap to Success"
-│   │                                  # in-app manual — no-ops if it already exists
-│   ├── update-roadmap-manual.ts      # re-runnable: replaces that manual's section tree — re-run
-│   │                                  # this one whenever md-docs/ROADMAP.md or roadmap/*.md change
-│   └── add-cicd-case-study-section.ts # one-time: adds a real-world case-study section (this
-│                                      # project's own ci.yml) to the existing DB-only "cicd-basics"
-│                                      # manual's "A Real GitHub Actions Workflow" section
+│   ├── seed-doc-family-manuals.ts    # historical only, superseded by update-doc-family-manuals.ts
+│   │                                  # below, which now creates-if-missing too — no separate seed
+│   │                                  # step needed for a new doc-family manual anymore
+│   ├── update-doc-family-manuals.ts  # re-runnable: reads STORY.md/SETUP.md/ROLES-AND-BILLING-PLAN.md/
+│   │                                  # RULES.md from disk and replaces each manual's section tree
+│   │                                  # (creating it first if missing) — re-run whenever those files
+│   │                                  # change. RULES.md's manual didn't exist before 2026-09-04.
+│   ├── seed-roadmap-manual.ts        # historical only, superseded by update-roadmap-manual.ts below
+│   ├── update-roadmap-manual.ts      # re-runnable: reads md-docs/roadmap/ROADMAP.md + its sibling
+│   │                                  # phase files from disk and replaces the "Roadmap to Success"
+│   │                                  # manual's section tree — re-run whenever those files change
+│   ├── add-cicd-case-study-section.ts # one-time: adds a real-world case-study section (this
+│   │                                  # project's own ci.yml) to the existing DB-only "cicd-basics"
+│   │                                  # manual's "A Real GitHub Actions Workflow" section
+│   ├── add-frank-admin-membership.ts # one-time fix: added a missing `member` row + cleared a stray
+│   │                                  # platform-level `user.role` value for an existing account
+│   ├── create-test-members.ts        # re-runnable: 3 throwaway local accounts as "member" of
+│   │                                  # Codestash, for exercising the bottom permission tier
+│   └── create-test-second-org.ts     # re-runnable: 1 throwaway local account owning its own second
+│                                      # org (plan "A"), for verifying org isolation is real
 │
 └── public/

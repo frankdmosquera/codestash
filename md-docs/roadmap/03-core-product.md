@@ -2,10 +2,11 @@
 
 **Create/edit UI for manuals and snippets shipped 2026-09-04** — flat,
 single-block sections only for v1 (see the checklist below for the exact
-scope and its deliberate limitation). Soft-delete and icon/background
-pickers are still open. (The other original gap — public pages hardcoded
-to static content — is already closed, done ahead of schedule 2026-09-03
-as part of the static-to-DB migration; see below.)
+scope and its deliberate limitation). **Soft-delete shipped 2026-09-05**
+(see below). Icon/background pickers are still open. (The other original
+gap — public pages hardcoded to static content — is already closed, done
+ahead of schedule 2026-09-03 as part of the static-to-DB migration; see
+below.)
 
 ## Locked decisions
 
@@ -35,7 +36,15 @@ as part of the static-to-DB migration; see below.)
       actually flat-compatible (`lib/helpers/manual-edit-compat.ts`);
       existing richer manuals (this roadmap, `mastering-git`, etc.) show
       no Edit button rather than risk silently destroying their structure
-- [ ] Build soft-delete (status field + filter it out of normal queries)
+- [x] Build soft-delete (status field + filter it out of normal queries)
+      — done 2026-09-05: `manual.deletedAt` (nullable timestamp, null =
+      active), filtered out of every read path (category listing/sidebar,
+      search, manual-by-slug); `deleteManualAction` sets it, owner/admin
+      only via `requireOrgRole`; a Delete button + confirmation dialog
+      sits next to Edit on both the manual page and the snippet page —
+      shown regardless of the flat-structure Edit restriction, since
+      deleting doesn't touch a manual's internal shape the way editing
+      through the v1 form would
 - [x] Update `/` and `/[category]` to query DB content — done 2026-09-03, no static fallback left at all (further than the original "fallback when empty" plan)
 - [ ] Icon picker — any lucide-react icon, replacing the small curated set in `lib/icon-map.ts`
 - [ ] Background theme presets — a small fixed set to start, not custom uploads

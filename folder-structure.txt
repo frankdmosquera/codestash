@@ -83,7 +83,13 @@ codestash/
 │   │                                  # workspace nav lives in the sidebar, not duplicated here)
 │   ├── manuals/
 │   │   ├── manual-accordion.tsx      # recursive tree renderer (1.1, 1.1.1, ...)
-│   │   └── manual-page.tsx
+│   │   ├── manual-page.tsx           # Server Component; renders Edit+Delete actions next to the title
+│   │   ├── manual-page-client.tsx    # search + expand/collapse state shell
+│   │   ├── manual-form.tsx           # shared by create/edit dialogs (flat, single-block sections)
+│   │   ├── create-manual-dialog.tsx
+│   │   ├── edit-manual-dialog.tsx    # only offered when manual-edit-compat.ts confirms flat shape
+│   │   └── delete-manual-dialog.tsx  # AlertDialog confirm; soft-deletes via deleteManualAction,
+│   │                                  # shown regardless of the Edit flat-shape restriction
 │   ├── blocks/
 │   │   └── stacking-cards/
 │   │       ├── stacking-cards.tsx

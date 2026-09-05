@@ -2,7 +2,7 @@
 
 import { cache } from "react";
 import { headers } from "next/headers";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { generateKeyBetween } from "fractional-indexing";
 
 import { auth } from "@/lib/auth";
@@ -45,7 +45,13 @@ export async function getManualsForCategory(categoryId: string): Promise<DbManua
       createdAt: manual.createdAt,
     })
     .from(manual)
-    .where(and(eq(manual.organizationId, organizationId), eq(manual.categoryId, categoryId)))
+    .where(
+      and(
+        eq(manual.organizationId, organizationId),
+        eq(manual.categoryId, categoryId),
+        isNull(manual.deletedAt),
+      ),
+    )
     .orderBy(asc(manual.rank));
 }
 
@@ -75,6 +81,26 @@ export async function reorderManualAction(
   }
 
   return { rank: newRank };
+}
+
+// Soft-deletes a manual (or snippet, same table) — owner/admin only, same
+// requireOrgRole pattern as reorderManualAction. Verifies the manual
+// actually belongs to the caller's active org in the `where` clause itself,
+// not just checked-and-trusted, before writing. Sets `deletedAt` rather
+// than removing the row, so the data survives a misclick even though
+// there's no restore UI yet.
+export async function deleteManualAction(manualId: string) {
+  const { organizationId } = await requireOrgRole(["owner", "admin"]);
+
+  const updated = await db
+    .update(manual)
+    .set({ deletedAt: new Date() })
+    .where(and(eq(manual.id, manualId), eq(manual.organizationId, organizationId)))
+    .returning({ id: manual.id });
+
+  if (updated.length === 0) {
+    throw new Error("Manual not found in your active workspace");
+  }
 }
 
 // One section = one block, flat (no nesting) — v1 scope for the
@@ -248,7 +274,11 @@ export const getManualBySlug = cache(
     if (!categoryRow) return undefined;
 
     const manualRow = await db.query.manual.findFirst({
-      where: and(eq(manual.categoryId, categoryRow.id), eq(manual.slug, manualSlug)),
+      where: and(
+        eq(manual.categoryId, categoryRow.id),
+        eq(manual.slug, manualSlug),
+        isNull(manual.deletedAt),
+      ),
       with: { sections: true },
     });
     if (!manualRow) return undefined;
@@ -290,7 +320,7 @@ export async function getSearchableCatalogItems(): Promise<SearchableItem[]> {
     })
     .from(manual)
     .innerJoin(category, eq(manual.categoryId, category.id))
-    .where(eq(manual.organizationId, organizationId))
+    .where(and(eq(manual.organizationId, organizationId), isNull(manual.deletedAt)))
     .orderBy(asc(category.rank), asc(manual.rank));
 
   return rows.map((r) => ({

@@ -52,8 +52,8 @@ export default async function SubpagePage({
 
   if (category && SNIPPET_CATEGORY_KEYS.has(category.key)) {
     const dbSnippet = toSnippet(dbManual);
-    if (dbSnippet) return <SnippetPage snippet={dbSnippet} />;
+    if (dbSnippet) return <SnippetPage snippet={dbSnippet} categorySlug={categorySlug} />;
   }
 
-  return <ManualPage manual={dbManual} />;
+  return <ManualPage manual={dbManual} categorySlug={categorySlug} />;
 }

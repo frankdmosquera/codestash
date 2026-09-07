@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,15 +17,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { authClient } from "@/lib/auth-client";
 import { deleteCategoryAction } from "@/lib/actions/category-actions";
 
-// Only ever rendered for a genuinely custom, DB-only category (see the
-// [category]/page.tsx branch with no static `getCategoryBySlug` match) —
-// deleteCategoryAction itself refuses a curated category as a second gate,
-// same "server action is the real gate" pattern as DeleteManualDialog.
-// Unlike deleting a manual, this has no soft-delete: the category and every
-// manual/snippet inside it are gone for good, so the copy says so plainly
-// rather than reusing DeleteManualDialog's softer "no restore option yet."
+// Every category can be deleted through the app now — no more curated
+// tier to carve an exception out for. Unlike deleting a manual, this has no
+// soft-delete: the category and every manual/snippet inside it are gone
+// for good, so the copy says so plainly rather than reusing
+// DeleteManualDialog's softer "no restore option yet."
 export function DeleteCategoryDialog({
   categoryId,
   label,
@@ -37,11 +36,19 @@ export function DeleteCategoryDialog({
 }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const { data: organization } = authClient.useActiveOrganization();
+  const queryClient = useQueryClient();
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: () => deleteCategoryAction(categoryId),
     onSuccess: () => {
       setOpen(false);
+      // The sidebar and home grid read this category list from their own
+      // React Query cache, not server-rendered data - router.refresh()
+      // alone never touches it, leaving a phantom entry pointing at an id
+      // that no longer exists until a hard reload (see also
+      // EditCategoryDialog, which had the same gap).
+      queryClient.invalidateQueries({ queryKey: ["categories", organization?.id] });
       router.push("/");
       router.refresh();
     },

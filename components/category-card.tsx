@@ -28,7 +28,6 @@ import { resolveIcon } from "@/lib/icon-map";
 import { authClient } from "@/lib/auth-client";
 import { getResolvedItemsForCategory } from "@/lib/actions/manual-actions";
 import { deleteCategoryAction, type DbCategoryRow } from "@/lib/actions/category-actions";
-import { getCategoryBySlug } from "@/lib/constants/categories";
 
 // Takes the already-resolved icon component as a prop rather than resolving
 // it inline where it's rendered — same pattern as CategoryIcon in
@@ -55,11 +54,6 @@ export function CategoryCard({ category }: CategoryCardProps) {
   });
   const items = getTopItems(allItems ?? [], 4);
 
-  // Only ever offered for a custom, DB-only category (deleteCategoryAction
-  // itself refuses a curated one) - same reasoning as the category page's
-  // own DeleteCategoryDialog, checked client-side here just to avoid
-  // showing a control that would only ever error.
-  const isCustomCategory = !getCategoryBySlug(category.slug);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const { data: organization } = authClient.useActiveOrganization();
   const queryClient = useQueryClient();
@@ -74,43 +68,41 @@ export function CategoryCard({ category }: CategoryCardProps) {
 
   return (
     <Card className="group relative flex h-full flex-col justify-between bg-neutral-900 p-6">
-      {isCustomCategory && (
-        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-          <AlertDialogTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={`Delete ${category.label}`}
-                className="absolute top-3 left-3 z-10 text-red-600 opacity-0 hover:bg-red-500/10 hover:text-red-700 group-hover:opacity-100 dark:text-red-400 dark:hover:text-red-300"
-              />
-            }
-          >
-            <Trash2 className="size-4" />
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete &quot;{category.label}&quot;?</AlertDialogTitle>
-              <AlertDialogDescription>
-                {items.length > 0
-                  ? `This permanently deletes the category and everything inside it. This cannot be undone.`
-                  : "This permanently deletes the category. This cannot be undone."}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            {error && <p className="text-sm text-destructive">{error.message}</p>}
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                variant="destructive"
-                disabled={isPending}
-                onClick={() => deleteCategory()}
-              >
-                {isPending ? "Deleting..." : "Delete"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={`Delete ${category.label}`}
+              className="absolute top-3 left-3 z-10 text-red-600 opacity-0 hover:bg-red-500/10 hover:text-red-700 group-hover:opacity-100 dark:text-red-400 dark:hover:text-red-300"
+            />
+          }
+        >
+          <Trash2 className="size-4" />
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete &quot;{category.label}&quot;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {items.length > 0
+                ? `This permanently deletes the category and everything inside it. This cannot be undone.`
+                : "This permanently deletes the category. This cannot be undone."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {error && <p className="text-sm text-destructive">{error.message}</p>}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={isPending}
+              onClick={() => deleteCategory()}
+            >
+              {isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <div>
         <div className="flex items-center gap-2">
           <CategoryCardIcon icon={resolveIcon(category.icon)} />

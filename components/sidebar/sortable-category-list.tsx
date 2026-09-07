@@ -39,7 +39,6 @@ function SortableItem({ row }: { row: DbCategoryRow }) {
         label={row.label}
         href={`/${row.slug}`}
         dbCategoryId={row.id}
-        slug={row.slug}
         dragHandle={
           <button
             type="button"
@@ -152,7 +151,6 @@ export function SortableCategoryList({
               label={row.label}
               href={`/${row.slug}`}
               dbCategoryId={row.id}
-              slug={row.slug}
             />
           ))}
         </SidebarMenu>

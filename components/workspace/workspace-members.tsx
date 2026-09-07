@@ -3,6 +3,10 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { getActiveOrganizationDetails } from "@/lib/actions/workspace-actions";
 import { InviteMemberForm } from "./invite-member-form";
+import { MemberRoleSelect } from "./member-role-select";
+import { RemoveMemberDialog } from "./remove-member-dialog";
+import { CancelInvitationButton } from "./cancel-invitation-button";
+import { EditOrganizationNameDialog } from "./edit-organization-name-dialog";
 
 // Server Component — the member/invitation lists are static once fetched;
 // only InviteMemberForm itself needs to be client.
@@ -28,6 +32,15 @@ export async function WorkspaceMembers() {
   return (
     <div className="space-y-10">
       <section>
+        <div className="flex items-center gap-1.5">
+          <h2 className="text-sm font-medium text-muted-foreground">
+            {organization.name}
+          </h2>
+          <EditOrganizationNameDialog organizationId={organization.id} initialName={organization.name} />
+        </div>
+      </section>
+
+      <section>
         <h2 className="text-sm font-medium text-muted-foreground">
           Invite someone
         </h2>
@@ -50,7 +63,10 @@ export async function WorkspaceMembers() {
                 <p className="text-sm font-medium">{member.user.name}</p>
                 <p className="text-xs text-muted-foreground">{member.user.email}</p>
               </div>
-              <Badge variant="secondary">{member.role}</Badge>
+              <div className="flex items-center gap-2">
+                <MemberRoleSelect memberId={member.id} role={member.role} />
+                <RemoveMemberDialog memberId={member.id} name={member.user.name} />
+              </div>
             </li>
           ))}
         </ul>
@@ -68,7 +84,10 @@ export async function WorkspaceMembers() {
                 className="flex items-center justify-between rounded-md border px-3 py-2"
               >
                 <p className="text-sm">{invitation.email}</p>
-                <Badge variant="outline">{invitation.role}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">{invitation.role}</Badge>
+                  <CancelInvitationButton invitationId={invitation.id} email={invitation.email} />
+                </div>
               </li>
             ))}
           </ul>

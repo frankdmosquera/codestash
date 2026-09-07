@@ -22,6 +22,24 @@ import {
 
 const emptySection = (depth: number): ManualSectionInput => ({ title: "", kind: "text", content: "", depth });
 
+// A snippet's single section has no title field in the UI at all (see
+// ManualForm's isSnippetShaped branch) — its title always comes from the
+// manual's own title instead, overridden right before submit (see the
+// mutationFn below). But react-hook-form validates the *current* form
+// state before that override runs, and manualSectionValidationSchema
+// requires every section's title to be non-empty — so without a seeded
+// placeholder here, create-mode validation fails on a field the user can
+// never see or fill in, and the form silently refuses to submit. `kind`
+// must also start as "code", matching how SnippetPage's EditManualDialog
+// always seeds it (see components/snippet-page.tsx) — a snippet is always
+// a code block, never a text paragraph.
+const emptySnippetSection = (depth: number): ManualSectionInput => ({
+  title: "snippet",
+  kind: "code",
+  content: "",
+  depth,
+});
+
 const MAX_CHARS = MAX_CHARS_PER_SECTION;
 
 // How many rows sit nested under this one, walking forward while depth
@@ -225,19 +243,21 @@ type ManualFormProps = {
 export function ManualForm(props: ManualFormProps) {
   const { isSnippetShaped, planLimits, onSuccess, mode } = props;
 
+  const emptyFirstSection = isSnippetShaped ? emptySnippetSection(0) : emptySection(0);
+
   const defaultValues: CreateManualValidationInput =
     mode === "edit"
       ? {
           categoryId: "",
           title: props.initialTitle,
           subtitle: props.initialSubtitle,
-          sections: props.initialSections.length > 0 ? props.initialSections : [emptySection(0)],
+          sections: props.initialSections.length > 0 ? props.initialSections : [emptyFirstSection],
         }
       : {
           categoryId: props.categoryId,
           title: "",
           subtitle: "",
-          sections: [emptySection(0)],
+          sections: [emptyFirstSection],
         };
 
   const form = useForm<CreateManualValidationInput>({

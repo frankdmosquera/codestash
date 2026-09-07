@@ -9,6 +9,8 @@ import { getOrgPlanLimits } from "@/lib/actions/get-org-plan-limits";
 import { resolveIcon } from "@/lib/icon-map";
 import { SortableItemGrid } from "@/components/sortable-item-grid";
 import { CreateManualDialog } from "@/components/manuals/create-manual-dialog";
+import { DeleteCategoryDialog } from "@/components/sidebar/delete-category-dialog";
+import { EditCategoryDialog } from "@/components/sidebar/edit-category-dialog";
 import type { LucideIcon } from "lucide-react";
 
 // Takes the already-resolved icon component as a prop (same pattern as
@@ -60,12 +62,20 @@ export default async function CategoryPage({
               {dbCategoryRow.label}
             </h1>
           </div>
-          <CreateManualDialog
-            categoryId={dbCategoryRow.id}
-            categoryHref={`/${categorySlug}`}
-            isSnippetShaped={isSnippetShapedSlug(categorySlug)}
-            planLimits={planLimits}
-          />
+          <div className="flex items-center gap-2">
+            <CreateManualDialog
+              categoryId={dbCategoryRow.id}
+              categoryHref={`/${categorySlug}`}
+              isSnippetShaped={isSnippetShapedSlug(categorySlug)}
+              planLimits={planLimits}
+            />
+            <EditCategoryDialog categoryId={dbCategoryRow.id} initialLabel={dbCategoryRow.label} />
+            <DeleteCategoryDialog
+              categoryId={dbCategoryRow.id}
+              label={dbCategoryRow.label}
+              itemCount={items.length}
+            />
+          </div>
         </div>
         {dbCategoryRow.description && (
           <p className="mt-2 max-w-xl text-neutral-300">{dbCategoryRow.description}</p>

@@ -8,6 +8,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { category } from "@/lib/db/schema/app-schema";
 import { requireOrgRole } from "@/lib/actions/require-org-role";
+import { getCategoryBySlug } from "@/lib/constants/categories";
 import { slugify } from "@/lib/utils";
 import {
   createCategoryValidationSchema,
@@ -22,6 +23,7 @@ export type DbCategoryRow = {
   icon: string;
   backgroundTheme: string;
   rank: string;
+  createdAt: Date;
 };
 
 // Used by both the sidebar and the home page — every route that reaches
@@ -42,6 +44,7 @@ export async function getCategoriesForActiveOrg(): Promise<DbCategoryRow[]> {
       icon: category.icon,
       backgroundTheme: category.backgroundTheme,
       rank: category.rank,
+      createdAt: category.createdAt,
     })
     .from(category)
     .where(eq(category.organizationId, organizationId))
@@ -125,4 +128,56 @@ export async function createCategoryAction(input: CreateCategoryValidationInput)
     });
 
   return created;
+}
+
+// Renames a category — owner/admin only, same as create/reorder/delete.
+// Deliberately never changes the slug (even if the label does), same
+// reasoning as updateManualAction: existing links to this category's own
+// page must never break just because it got renamed. Scoped to custom,
+// DB-only categories for the same reason deleteCategoryAction is: a
+// curated category's label comes from lib/constants/categories.ts, and the
+// category page renders that static label for curated categories, never
+// the DB row's own `label` column — so editing it here would silently do
+// nothing visible, which is worse than refusing outright.
+export async function updateCategoryAction(categoryId: string, input: CreateCategoryValidationInput) {
+  const { organizationId } = await requireOrgRole(["owner", "admin"]);
+  const { label } = createCategoryValidationSchema.parse(input);
+
+  const existing = await db.query.category.findFirst({
+    where: and(eq(category.id, categoryId), eq(category.organizationId, organizationId)),
+  });
+  if (!existing) {
+    throw new Error("Category not found in your active workspace");
+  }
+  if (getCategoryBySlug(existing.slug)) {
+    throw new Error("This is a built-in category and can't be renamed");
+  }
+
+  await db.update(category).set({ label }).where(eq(category.id, categoryId));
+}
+
+// Permanently deletes a category — owner/admin only, same as create/reorder.
+// Unlike manuals, `category` has no `deletedAt` column, so this is a real,
+// unrecoverable hard delete; every manual and section inside cascades with
+// it (see the `onDelete: "cascade"` FKs in manual-schema.ts/section-schema.ts).
+// Scoped to genuinely custom, DB-only categories on purpose: a curated
+// category (ai-instructions, hooks, etc.) still has a fixed entry in
+// lib/constants/categories.ts even if its DB row disappears, which would
+// desync the sidebar/nav from what the category page can actually render —
+// so deleting one of those is refused here rather than left to the caller
+// to avoid by convention.
+export async function deleteCategoryAction(categoryId: string) {
+  const { organizationId } = await requireOrgRole(["owner", "admin"]);
+
+  const existing = await db.query.category.findFirst({
+    where: and(eq(category.id, categoryId), eq(category.organizationId, organizationId)),
+  });
+  if (!existing) {
+    throw new Error("Category not found in your active workspace");
+  }
+  if (getCategoryBySlug(existing.slug)) {
+    throw new Error("This is a built-in category and can't be deleted");
+  }
+
+  await db.delete(category).where(eq(category.id, categoryId));
 }

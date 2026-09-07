@@ -23,6 +23,7 @@ export type DbCategoryRow = {
   icon: string;
   backgroundTheme: string;
   rank: string;
+  createdAt: Date;
 };
 
 // Used by both the sidebar and the home page — every route that reaches
@@ -43,6 +44,7 @@ export async function getCategoriesForActiveOrg(): Promise<DbCategoryRow[]> {
       icon: category.icon,
       backgroundTheme: category.backgroundTheme,
       rank: category.rank,
+      createdAt: category.createdAt,
     })
     .from(category)
     .where(eq(category.organizationId, organizationId))
@@ -126,6 +128,32 @@ export async function createCategoryAction(input: CreateCategoryValidationInput)
     });
 
   return created;
+}
+
+// Renames a category — owner/admin only, same as create/reorder/delete.
+// Deliberately never changes the slug (even if the label does), same
+// reasoning as updateManualAction: existing links to this category's own
+// page must never break just because it got renamed. Scoped to custom,
+// DB-only categories for the same reason deleteCategoryAction is: a
+// curated category's label comes from lib/constants/categories.ts, and the
+// category page renders that static label for curated categories, never
+// the DB row's own `label` column — so editing it here would silently do
+// nothing visible, which is worse than refusing outright.
+export async function updateCategoryAction(categoryId: string, input: CreateCategoryValidationInput) {
+  const { organizationId } = await requireOrgRole(["owner", "admin"]);
+  const { label } = createCategoryValidationSchema.parse(input);
+
+  const existing = await db.query.category.findFirst({
+    where: and(eq(category.id, categoryId), eq(category.organizationId, organizationId)),
+  });
+  if (!existing) {
+    throw new Error("Category not found in your active workspace");
+  }
+  if (getCategoryBySlug(existing.slug)) {
+    throw new Error("This is a built-in category and can't be renamed");
+  }
+
+  await db.update(category).set({ label }).where(eq(category.id, categoryId));
 }
 
 // Permanently deletes a category — owner/admin only, same as create/reorder.

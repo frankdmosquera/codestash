@@ -10,6 +10,7 @@ import { resolveIcon } from "@/lib/icon-map";
 import { SortableItemGrid } from "@/components/sortable-item-grid";
 import { CreateManualDialog } from "@/components/manuals/create-manual-dialog";
 import { DeleteCategoryDialog } from "@/components/sidebar/delete-category-dialog";
+import { EditCategoryDialog } from "@/components/sidebar/edit-category-dialog";
 import type { LucideIcon } from "lucide-react";
 
 // Takes the already-resolved icon component as a prop (same pattern as
@@ -68,6 +69,7 @@ export default async function CategoryPage({
               isSnippetShaped={isSnippetShapedSlug(categorySlug)}
               planLimits={planLimits}
             />
+            <EditCategoryDialog categoryId={dbCategoryRow.id} initialLabel={dbCategoryRow.label} />
             <DeleteCategoryDialog
               categoryId={dbCategoryRow.id}
               label={dbCategoryRow.label}

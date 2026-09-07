@@ -131,7 +131,12 @@ export function SortableItemGrid({ items: initialItems }: { items: ResolvedCatal
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext
+      id="sortable-item-grid"
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
       <SortableContext items={items.map((item) => item.id)} strategy={rectSortingStrategy}>
         <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (

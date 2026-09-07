@@ -58,7 +58,12 @@ export function SortableCategoryGrid() {
   if (!categories) return null;
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext
+      id="sortable-category-grid"
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
       <SortableContext items={categories.map((c) => c.id)} strategy={rectSortingStrategy}>
         <div className="mt-10 grid gap-12 sm:grid-cols-2 lg:grid-cols-3">
           {categories.map((category) => (

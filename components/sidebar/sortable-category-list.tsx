@@ -64,6 +64,7 @@ export function SortableCategoryList({
 
   return (
     <DndContext
+      id="sortable-category-list"
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}

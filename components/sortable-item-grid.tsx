@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Grip } from "lucide-react";
+import { ArrowRight, Grip, Trash2 } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 import {
   DndContext,
   closestCenter,
@@ -22,14 +23,65 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 import { Card } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { reorderManualAction, type ResolvedCatalogItem } from "@/lib/actions/manual-actions";
+import { deleteManualAction, reorderManualAction, type ResolvedCatalogItem } from "@/lib/actions/manual-actions";
 import { sortByMode, type SortMode, type SortDirection } from "@/lib/helpers/sort-order";
 
-function ItemCardBody({ item }: { item: ResolvedCatalogItem }) {
+function ItemCardBody({ item, onDeleted }: { item: ResolvedCatalogItem; onDeleted: () => void }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const { mutate: deleteItem, isPending, error } = useMutation({
+    mutationFn: () => deleteManualAction(item.id),
+    onSuccess: () => {
+      setConfirmOpen(false);
+      onDeleted();
+    },
+  });
+
   return (
-    <Card className="h-full justify-between gap-3 bg-neutral-900 p-5">
+    <Card className="group relative h-full justify-between gap-3 bg-neutral-900 p-5">
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={`Delete ${item.title}`}
+              className="absolute top-2 left-2 z-10 text-red-600 opacity-0 hover:bg-red-500/10 hover:text-red-700 group-hover:opacity-100 dark:text-red-400 dark:hover:text-red-300"
+            />
+          }
+        >
+          <Trash2 className="size-4" />
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete &quot;{item.title}&quot;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              It&apos;ll disappear from the catalog right away. The data itself isn&apos;t
+              permanently erased, but there&apos;s no restore option in the app yet.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {error && <p className="text-sm text-destructive">{error.message}</p>}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" disabled={isPending} onClick={() => deleteItem()}>
+              {isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <div>
         <h2 className="text-lg font-semibold text-white">{item.title}</h2>
         {item.description && (
@@ -52,7 +104,7 @@ function ItemCardBody({ item }: { item: ResolvedCatalogItem }) {
   );
 }
 
-function SortableItemCard({ item }: { item: ResolvedCatalogItem }) {
+function SortableItemCard({ item, onDeleted }: { item: ResolvedCatalogItem; onDeleted: () => void }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
 
@@ -76,7 +128,7 @@ function SortableItemCard({ item }: { item: ResolvedCatalogItem }) {
       >
         <Grip className="size-4" />
       </button>
-      <ItemCardBody item={item} />
+      <ItemCardBody item={item} onDeleted={onDeleted} />
     </li>
   );
 }
@@ -197,7 +249,10 @@ export function SortableItemGrid({ items: initialItems }: { items: ResolvedCatal
         <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {sorted.map((item) => (
             <li key={item.id}>
-              <ItemCardBody item={item} />
+              <ItemCardBody
+                item={item}
+                onDeleted={() => setItems((current) => current.filter((i) => i.id !== item.id))}
+              />
             </li>
           ))}
         </ul>
@@ -217,7 +272,11 @@ export function SortableItemGrid({ items: initialItems }: { items: ResolvedCatal
         <SortableContext items={items.map((item) => item.id)} strategy={rectSortingStrategy}>
           <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((item) => (
-              <SortableItemCard key={item.id} item={item} />
+              <SortableItemCard
+                key={item.id}
+                item={item}
+                onDeleted={() => setItems((current) => current.filter((i) => i.id !== item.id))}
+              />
             ))}
           </ul>
         </SortableContext>

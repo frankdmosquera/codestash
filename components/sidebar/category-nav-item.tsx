@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Trash2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   Collapsible,
@@ -18,8 +18,22 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { authClient } from "@/lib/auth-client";
 import { getManualsForCategory } from "@/lib/actions/manual-actions";
+import { deleteCategoryAction } from "@/lib/actions/category-actions";
 import { useCategoryOpen } from "./category-open-context";
 
 type SortMode = "alpha" | "recent";
@@ -51,6 +65,17 @@ export function CategoryNavItem({
   const [direction, setDirection] = useState<SortDirection>("asc");
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollDown, setCanScrollDown] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const { data: organization } = authClient.useActiveOrganization();
+  const queryClient = useQueryClient();
+
+  const { mutate: deleteCategory, isPending: isDeletingCategory, error: deleteError } = useMutation({
+    mutationFn: () => deleteCategoryAction(dbCategoryId),
+    onSuccess: () => {
+      setConfirmOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["categories", organization?.id] });
+    },
+  });
 
   const { data: dbManuals, isLoading: dbLoading } = useQuery({
     queryKey: ["manuals", dbCategoryId],
@@ -106,8 +131,42 @@ export function CategoryNavItem({
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
       <SidebarMenuItem>
-        <div className="flex items-center gap-1">
+        <div className="group flex items-center gap-1">
           {dragHandle}
+          <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <AlertDialogTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`Delete ${label}`}
+                  className="shrink-0 text-red-500 opacity-0 hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100 dark:text-red-400 dark:hover:text-red-300"
+                />
+              }
+            >
+              <Trash2 className="size-4" />
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete &quot;{label}&quot;?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This permanently deletes the category and everything inside it. This
+                  cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              {deleteError && <p className="text-sm text-destructive">{deleteError.message}</p>}
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  variant="destructive"
+                  disabled={isDeletingCategory}
+                  onClick={() => deleteCategory()}
+                >
+                  {isDeletingCategory ? "Deleting..." : "Delete"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <CollapsibleTrigger
             render={
               <SidebarMenuButton

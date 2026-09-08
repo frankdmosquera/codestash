@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Pencil } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { authClient } from "@/lib/auth-client";
 import { updateCategoryAction } from "@/lib/actions/category-actions";
 import {
   createCategoryValidationSchema,
@@ -38,6 +39,8 @@ export function EditCategoryDialog({
 }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const { data: organization } = authClient.useActiveOrganization();
+  const queryClient = useQueryClient();
 
   const form = useForm<CreateCategoryValidationInput>({
     resolver: zodResolver(createCategoryValidationSchema),
@@ -48,6 +51,9 @@ export function EditCategoryDialog({
     mutationFn: (values: CreateCategoryValidationInput) => updateCategoryAction(categoryId, values),
     onSuccess: () => {
       setOpen(false);
+      // Same cache gap as DeleteCategoryDialog: the sidebar/home grid read
+      // this from React Query, which router.refresh() never touches.
+      queryClient.invalidateQueries({ queryKey: ["categories", organization?.id] });
       router.refresh();
     },
   });

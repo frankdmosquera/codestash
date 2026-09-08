@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth";
-import { getCategoryBySlug, isSnippetShapedSlug } from "@/lib/constants/categories";
 import { getResolvedItemsForCategory, getDbCategoryBySlug } from "@/lib/actions/manual-actions";
 import { getOrgPlanLimits } from "@/lib/actions/get-org-plan-limits";
 import { resolveIcon } from "@/lib/icon-map";
@@ -25,13 +24,13 @@ export async function generateMetadata({
   params,
 }: PageProps<"/[category]">): Promise<Metadata> {
   const { category: categorySlug } = await params;
-  const category = getCategoryBySlug(categorySlug);
-  if (category) return { title: category.label };
-
   const dbCategoryRow = await getDbCategoryBySlug(categorySlug);
   return { title: dbCategoryRow ? dbCategoryRow.label : "Codestash" };
 }
 
+// Every category is an ordinary, fully user-owned row now — no more
+// curated/built-in tier with its own hardcoded icon, background, or
+// protection from editing/deleting. See lib/actions/category-actions.ts.
 export default async function CategoryPage({
   params,
 }: PageProps<"/[category]">) {
@@ -41,78 +40,40 @@ export default async function CategoryPage({
   if (!session) redirect("/sign-in");
 
   const { category: categorySlug } = await params;
-  const category = getCategoryBySlug(categorySlug);
   const planLimits = await getOrgPlanLimits(session.session.activeOrganizationId ?? "");
 
-  if (!category) {
-    // No static counterpart — a genuinely custom, DB-only category. No
-    // decorative Background or curated icon set for these yet, just the
-    // DB row's own label/description/icon.
-    const dbCategoryRow = await getDbCategoryBySlug(categorySlug);
-    if (!dbCategoryRow) notFound();
+  const dbCategoryRow = await getDbCategoryBySlug(categorySlug);
+  if (!dbCategoryRow) notFound();
 
-    const items = await getResolvedItemsForCategory(categorySlug, `/${categorySlug}`);
-
-    return (
-      <div className="mx-auto max-w-5xl px-6 py-16">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <CategoryIcon icon={resolveIcon(dbCategoryRow.icon)} />
-            <h1 className="text-3xl font-semibold tracking-tight text-white">
-              {dbCategoryRow.label}
-            </h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <CreateManualDialog
-              categoryId={dbCategoryRow.id}
-              categoryHref={`/${categorySlug}`}
-              isSnippetShaped={isSnippetShapedSlug(categorySlug)}
-              planLimits={planLimits}
-            />
-            <EditCategoryDialog categoryId={dbCategoryRow.id} initialLabel={dbCategoryRow.label} />
-            <DeleteCategoryDialog
-              categoryId={dbCategoryRow.id}
-              label={dbCategoryRow.label}
-              itemCount={items.length}
-            />
-          </div>
-        </div>
-        {dbCategoryRow.description && (
-          <p className="mt-2 max-w-xl text-neutral-300">{dbCategoryRow.description}</p>
-        )}
-        <SortableItemGrid items={items} />
-      </div>
-    );
-  }
-
-  const [items, dbCategoryRow] = await Promise.all([
-    getResolvedItemsForCategory(categorySlug, category.href),
-    getDbCategoryBySlug(categorySlug),
-  ]);
-  const Icon = category.icon;
+  const items = await getResolvedItemsForCategory(categorySlug, `/${categorySlug}`);
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-16">
-      <category.Background />
-
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Icon className="size-6 text-teal-400" strokeWidth={1.75} />
+          <CategoryIcon icon={resolveIcon(dbCategoryRow.icon)} />
           <h1 className="text-3xl font-semibold tracking-tight text-white">
-            {category.label}
+            {dbCategoryRow.label}
           </h1>
         </div>
-        {dbCategoryRow && (
+        <div className="flex items-center gap-2">
           <CreateManualDialog
             categoryId={dbCategoryRow.id}
-            categoryHref={category.href}
-            isSnippetShaped={isSnippetShapedSlug(categorySlug)}
+            categoryHref={`/${categorySlug}`}
+            isSnippetShaped={false}
             planLimits={planLimits}
           />
-        )}
+          <EditCategoryDialog categoryId={dbCategoryRow.id} initialLabel={dbCategoryRow.label} />
+          <DeleteCategoryDialog
+            categoryId={dbCategoryRow.id}
+            label={dbCategoryRow.label}
+            itemCount={items.length}
+          />
+        </div>
       </div>
-      <p className="mt-2 max-w-xl text-neutral-300">{category.description}</p>
-
+      {dbCategoryRow.description && (
+        <p className="mt-2 max-w-xl text-neutral-300">{dbCategoryRow.description}</p>
+      )}
       <SortableItemGrid items={items} />
     </div>
   );

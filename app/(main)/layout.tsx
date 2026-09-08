@@ -11,8 +11,8 @@ export default function MainLayout({
     <SidebarProvider>
       <AppSidebar />
       {/* bg-transparent overrides SidebarInset's default opaque bg-background,
-          which otherwise paints over each page's own fixed/-z-10 decorative
-          background (GitGraphBackground, ManualsBackground, etc.) */}
+          which otherwise paints over a page's own fixed/-z-10 decorative
+          background (GitGraphBackground, etc.) */}
       <SidebarInset className="bg-transparent">
         <SiteHeader />
         {children}

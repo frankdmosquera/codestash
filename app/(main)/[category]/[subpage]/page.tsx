@@ -3,28 +3,31 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth";
-import { getCategoryBySlug, SNIPPET_CATEGORY_KEYS } from "@/lib/constants/categories";
 import { getManualBySlug } from "@/lib/actions/manual-actions";
 import { getOrgPlanLimits } from "@/lib/actions/get-org-plan-limits";
 import { ManualPage } from "@/components/manuals/manual-page";
 import { SnippetPage } from "@/components/snippet-page";
 import type { Manual, Snippet } from "@/lib/data/types";
 
-// A DB snippet is stored as a manual with exactly one section and a single
-// "code" block (see scripts/merge-snippet-into-manual.ts) — same table as
-// manuals, just the degenerate one-node case. This reshapes it back into
-// the flat `Snippet` shape SnippetPage expects, so non-manual categories
-// keep rendering as "title + code", not an accordion with one item.
+// A snippet is just a manual whose *own shape* happens to be exactly one
+// section, with no children, holding a single "code" block — not a
+// category-level distinction anymore (there's no more curated/snippet-only
+// tier of category, see lib/actions/category-actions.ts). Any manual in any
+// category renders this compact "title + code" view the moment it matches
+// this shape; add a second section, or nest anything under the first, and
+// it renders as a normal accordion instead.
 function toSnippet(dbManual: Manual): Snippet | undefined {
-  const blocks = dbManual.sections[0]?.blocks;
-  const code = blocks?.find((b) => b.type === "code")?.code;
-  if (code === undefined) return undefined;
+  const [only, ...rest] = dbManual.sections;
+  if (!only || rest.length > 0 || only.children?.length) return undefined;
+  const blocks = only.blocks ?? [];
+  const [block, ...moreBlocks] = blocks;
+  if (!block || moreBlocks.length > 0 || block.type !== "code") return undefined;
   return {
     id: dbManual.id,
     slug: dbManual.slug,
     title: dbManual.title,
     description: dbManual.subtitle || undefined,
-    code,
+    code: block.code,
     createdAt: dbManual.createdAt,
   };
 }
@@ -46,7 +49,6 @@ export default async function SubpagePage({
   if (!session) redirect("/sign-in");
 
   const { category: categorySlug, subpage } = await params;
-  const category = getCategoryBySlug(categorySlug);
 
   const dbManual = await getManualBySlug(categorySlug, subpage);
   if (!dbManual) notFound();
@@ -57,10 +59,8 @@ export default async function SubpagePage({
   // not a real code path.
   const planLimits = await getOrgPlanLimits(session.session.activeOrganizationId ?? "");
 
-  if (category && SNIPPET_CATEGORY_KEYS.has(category.key)) {
-    const dbSnippet = toSnippet(dbManual);
-    if (dbSnippet) return <SnippetPage snippet={dbSnippet} categorySlug={categorySlug} planLimits={planLimits} />;
-  }
+  const dbSnippet = toSnippet(dbManual);
+  if (dbSnippet) return <SnippetPage snippet={dbSnippet} categorySlug={categorySlug} planLimits={planLimits} />;
 
   return <ManualPage manual={dbManual} categorySlug={categorySlug} planLimits={planLimits} />;
 }

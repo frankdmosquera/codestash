@@ -1,10 +1,3 @@
-export type CatalogCategoryKey =
-  | "manuals"
-  | "hooks"
-  | "helpers"
-  | "blocks"
-  | "aiInstructions";
-
 export type ContentBlock =
   | { type: "p"; text: string }
   | { type: "list"; items: string[] }
@@ -28,9 +21,10 @@ export type Manual = {
   sections: ManualSection[];
 };
 
-// Shared shape for hooks, helpers, blocks, and AI instructions — each is
-// just "one piece of copy-pasteable code with a title." Manuals are the one
-// category structurally different enough to need their own shape above.
+// The compact view for any manual whose own shape is exactly one section,
+// no nesting, holding a single "code" block — see toSnippet in
+// app/(main)/[category]/[subpage]/page.tsx. Not tied to any particular
+// category; any manual that happens to match this shape renders this way.
 export type Snippet = {
   id: string;
   slug: string;

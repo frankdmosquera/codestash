@@ -230,6 +230,11 @@ codestash/
 │   ├── update-roadmap-manual.ts      # re-runnable: reads md-docs/roadmap/ROADMAP.md + its sibling
 │   │                                  # phase files from disk and replaces the "Roadmap to Success"
 │   │                                  # manual's section tree — re-run whenever those files change
+│   ├── seed-ai-tools-manuals.ts      # re-runnable (2026-09-08): mirrors the next-ai-sdk project's
+│   │                                  # generated docs/ai-tools/*.md (one per AI SDK 7 route) into the
+│   │                                  # "ai-tools" category as one manual each — takes the docs dir
+│   │                                  # path + owner email as args; same parser as the update-*.ts
+│   │                                  # scripts, creates the category/manuals if missing
 │   ├── add-cicd-case-study-section.ts # one-time: adds a real-world case-study section (this
 │   │                                  # project's own ci.yml) to the existing DB-only "cicd-basics"
 │   │                                  # manual's "A Real GitHub Actions Workflow" section

@@ -2,6 +2,7 @@ import {
   Anchor,
   BookOpen,
   Blocks,
+  Bot,
   FileCode2,
   Folder,
   Wrench,
@@ -19,6 +20,7 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   Anchor,
   Wrench,
   Blocks,
+  Bot,
   FileCode2,
 };
 
